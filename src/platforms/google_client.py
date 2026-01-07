@@ -9,7 +9,7 @@ from .base import BasePlatformClient, QueryResult, PlatformError
 class GoogleClient(BasePlatformClient):
     """Client for Google's Gemini API using the new unified SDK."""
 
-    MODEL = "gemini-3.0-pro-001"
+    MODEL = "gemini-3-pro-preview"
 
     def __init__(self, api_key: str, logger: Any):
         super().__init__(api_key, logger)
