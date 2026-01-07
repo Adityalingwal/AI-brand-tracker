@@ -136,9 +136,9 @@ async def main():
         progress.complete_step("PROMPTS", items=len(all_prompts))
 
         # ============================================================
-        # STEP 3: QUERY AI PLATFORMS
+        # STEP 3: QUERY AI PLATFORMS (PARALLEL EXECUTION)
         # ============================================================
-        progress.start_step("QUERY", f"Querying {len(actor_input.platforms)} AI platforms")
+        progress.start_step("QUERY", f"Querying {len(actor_input.platforms)} AI platforms in parallel")
 
         # Create platform clients
         platform_clients: dict[Platform, BasePlatformClient] = {}
@@ -150,65 +150,105 @@ async def main():
                     platform_clients[platform] = client
                     logger.info(f"  Initialized {platform.value} client")
 
-        # Query all platforms with all prompts
-        all_responses: list[dict] = []
-        prompt_counter = 0
+        # Batch size for parallel prompt execution (to avoid rate limits)
+        BATCH_SIZE = 5
 
-        for platform, client in platform_clients.items():
-            logger.info(f"")
-            logger.info(f"  Querying {platform.value}...")
-
-            for i, prompt_text in enumerate(all_prompts):
-                prompt_id = f"prompt_{prompt_counter:03d}"
-                prompt_counter += 1
-
-                progress.log_progress(
-                    i + 1,
-                    len(all_prompts),
-                    f"{platform.value}: {prompt_text[:40]}..."
-                )
-
-                try:
-                    result = await client.query_with_retry(prompt_text, max_retries=2)
-
-                    if result.success:
-                        all_responses.append({
-                            "prompt_id": prompt_id,
-                            "prompt_text": prompt_text,
-                            "platform": platform.value,
-                            "model": result.model,
-                            "response": result.response,
-                            "success": True,
-                        })
-                        error_tracker.add_success(
-                            f"{platform.value}:{prompt_id}",
-                            {"prompt": prompt_text[:50]}
-                        )
-                    else:
-                        error_tracker.add_error(
-                            "query_failed",
-                            result.error or "Unknown error",
-                            context=f"{platform.value}:{prompt_id}"
-                        )
-                        all_responses.append({
-                            "prompt_id": prompt_id,
-                            "prompt_text": prompt_text,
-                            "platform": platform.value,
-                            "model": result.model,
-                            "response": "",
-                            "success": False,
-                            "error": result.error,
-                        })
-
-                except Exception as e:
+        async def query_single_prompt(client: BasePlatformClient, platform: Platform, prompt_text: str, prompt_id: str) -> dict:
+            """Query a single prompt on a platform."""
+            try:
+                result = await client.query_with_retry(prompt_text, max_retries=2)
+                if result.success:
+                    error_tracker.add_success(
+                        f"{platform.value}:{prompt_id}",
+                        {"prompt": prompt_text[:50]}
+                    )
+                    return {
+                        "prompt_id": prompt_id,
+                        "prompt_text": prompt_text,
+                        "platform": platform.value,
+                        "model": result.model,
+                        "response": result.response,
+                        "success": True,
+                    }
+                else:
                     error_tracker.add_error(
-                        "query_exception",
-                        str(e),
+                        "query_failed",
+                        result.error or "Unknown error",
                         context=f"{platform.value}:{prompt_id}"
                     )
+                    return {
+                        "prompt_id": prompt_id,
+                        "prompt_text": prompt_text,
+                        "platform": platform.value,
+                        "model": result.model,
+                        "response": "",
+                        "success": False,
+                        "error": result.error,
+                    }
+            except Exception as e:
+                error_tracker.add_error(
+                    "query_exception",
+                    str(e),
+                    context=f"{platform.value}:{prompt_id}"
+                )
+                return {
+                    "prompt_id": prompt_id,
+                    "prompt_text": prompt_text,
+                    "platform": platform.value,
+                    "model": "",
+                    "response": "",
+                    "success": False,
+                    "error": str(e),
+                }
 
-                # Small delay between requests to avoid rate limits
-                await asyncio.sleep(0.5)
+        async def query_platform(platform: Platform, client: BasePlatformClient) -> list[dict]:
+            """Query all prompts on a single platform in batches."""
+            logger.info(f"  Starting {platform.value}...")
+            platform_responses = []
+            
+            # Process prompts in batches
+            for batch_start in range(0, len(all_prompts), BATCH_SIZE):
+                batch_end = min(batch_start + BATCH_SIZE, len(all_prompts))
+                batch_prompts = all_prompts[batch_start:batch_end]
+                
+                # Create tasks for this batch
+                tasks = []
+                for i, prompt_text in enumerate(batch_prompts):
+                    prompt_idx = batch_start + i
+                    prompt_id = f"{platform.value}_prompt_{prompt_idx:03d}"
+                    tasks.append(query_single_prompt(client, platform, prompt_text, prompt_id))
+                
+                # Execute batch in parallel
+                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                for result in batch_results:
+                    if isinstance(result, Exception):
+                        error_tracker.add_error("batch_exception", str(result))
+                    elif isinstance(result, dict):
+                        platform_responses.append(result)
+                
+                # Small delay between batches to be safe
+                if batch_end < len(all_prompts):
+                    await asyncio.sleep(0.3)
+            
+            logger.info(f"  Completed {platform.value}: {len(platform_responses)} responses")
+            return platform_responses
+
+        # Query all platforms in parallel
+        logger.info(f"  Running {len(platform_clients)} platforms in parallel...")
+        platform_tasks = [
+            query_platform(platform, client) 
+            for platform, client in platform_clients.items()
+        ]
+        platform_results = await asyncio.gather(*platform_tasks, return_exceptions=True)
+
+        # Collect all responses
+        all_responses: list[dict] = []
+        for result in platform_results:
+            if isinstance(result, Exception):
+                error_tracker.add_error("platform_exception", str(result))
+            elif isinstance(result, list):
+                all_responses.extend(result)
 
         logger.info(f"")
         logger.info(f"  Collected {len(all_responses)} responses")

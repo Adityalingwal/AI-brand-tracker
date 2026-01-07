@@ -1,33 +1,53 @@
-"""Extract brand mentions from AI responses."""
+"""Extract brand mentions and citations from AI responses using LLM."""
 
-from typing import Any, Optional
+from typing import Any
 import json
 import re
 from dataclasses import dataclass
 from ..config import Platform, BrandMention
 
 
+@dataclass
+class ExtractionResult:
+    """Result of LLM extraction containing mentions and citations."""
+    mentions: list[BrandMention]
+    citations: list[str]
+
+
 class MentionExtractor:
-    """Extract brand mentions from AI responses using LLM."""
+    """Extract brand mentions and citations from AI responses using LLM."""
 
-    SYSTEM_PROMPT = """You are an expert at analyzing text for brand mentions.
+    SYSTEM_PROMPT = """You are an expert at analyzing text for brand mentions and citations.
 
-Your task is to analyze the given text and identify mentions of specific brands.
+Your task is to analyze the given text and:
+1. Identify mentions of specific brands
+2. Extract any URLs/citations mentioned
 
 For each brand mentioned, provide:
-1. The exact brand name (as provided in the list)
-2. How many times it's mentioned (count all variations like "Nike", "Nike's", "by Nike")
-3. The position/rank (1 = first mentioned, 2 = second, etc.)
-4. A relevant context sentence showing how the brand is described
-5. Whether the brand is explicitly recommended (true/false)
+- brand: The exact brand name (as provided in the list)
+- count: How many times it's mentioned (count all variations like "Nike", "Nike's", "by Nike")
+- rank: The position (1 = first mentioned, 2 = second, etc.)
+- context: A relevant context sentence showing how the brand is described
+- isRecommended: Whether the brand is explicitly recommended (true/false)
 
-Return ONLY a JSON array of objects. If a brand is not mentioned, do not include it.
+Return a JSON object with two fields:
+1. "mentions": Array of brand mention objects
+2. "citations": Array of URL strings found in the text
 
 Example output:
-[
-  {"brand": "Nike", "count": 3, "rank": 1, "context": "Nike leads the market with innovative designs", "isRecommended": true},
-  {"brand": "Adidas", "count": 2, "rank": 2, "context": "Adidas offers competitive alternatives", "isRecommended": false}
-]"""
+{
+  "mentions": [
+    {"brand": "Nike", "count": 3, "rank": 1, "context": "Nike leads the market with innovative designs", "isRecommended": true},
+    {"brand": "Adidas", "count": 2, "rank": 2, "context": "Adidas offers competitive alternatives", "isRecommended": false}
+  ],
+  "citations": [
+    "https://example.com/article",
+    "https://review-site.com/comparison"
+  ]
+}
+
+If no brands are mentioned, return an empty mentions array.
+If no URLs are found, return an empty citations array."""
 
     def __init__(self, api_key: str, provider: Platform, logger: Any):
         """
@@ -42,42 +62,40 @@ Example output:
         self.provider = provider
         self.logger = logger
 
-    async def extract(self, response_text: str, brands: list[str]) -> list[BrandMention]:
+    async def extract(self, response_text: str, brands: list[str]) -> ExtractionResult:
         """
-        Extract brand mentions from response text.
+        Extract brand mentions and citations from response text using LLM.
 
         Args:
             response_text: The AI response to analyze
             brands: List of brands to look for
 
         Returns:
-            List of BrandMention objects
+            ExtractionResult containing mentions and citations
         """
         if not response_text or not brands:
-            return []
+            return ExtractionResult(mentions=[], citations=[])
 
-        # First try LLM extraction
         try:
-            mentions = await self._extract_with_llm(response_text, brands)
-            if mentions:
-                return mentions
+            result = await self._extract_with_llm(response_text, brands)
+            return result
         except Exception as e:
             self.logger.warning(f"  LLM extraction failed: {e}")
+            return ExtractionResult(mentions=[], citations=[])
 
-        # Fallback to regex-based extraction
-        return self._extract_with_regex(response_text, brands)
-
-    async def _extract_with_llm(self, response_text: str, brands: list[str]) -> list[BrandMention]:
-        """Extract mentions using LLM."""
+    async def _extract_with_llm(self, response_text: str, brands: list[str]) -> ExtractionResult:
+        """Extract mentions and citations using LLM."""
         brands_list = ", ".join(brands)
         user_prompt = f"""Analyze this text for mentions of these brands: {brands_list}
+
+Also extract any URLs/citations found in the text.
 
 Text to analyze:
 \"\"\"
 {response_text[:3000]}
 \"\"\"
 
-Return ONLY a JSON array of brand mentions found. If a brand is not mentioned, do not include it."""
+Return a JSON object with "mentions" array and "citations" array."""
 
         content = ""
 
@@ -111,7 +129,7 @@ Return ONLY a JSON array of brand mentions found. If a brand is not mentioned, d
 
         client = AsyncOpenAI(api_key=self.api_key)
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",  # Use mini for analysis (cheaper)
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
@@ -138,20 +156,27 @@ Return ONLY a JSON array of brand mentions found. If a brand is not mentioned, d
                 content += block.text
         return content
 
-    def _parse_response(self, content: str, valid_brands: list[str]) -> list[BrandMention]:
-        """Parse LLM response into BrandMention objects."""
+    def _parse_response(self, content: str, valid_brands: list[str]) -> ExtractionResult:
+        """Parse LLM response into ExtractionResult."""
         mentions = []
+        citations = []
 
         try:
-            # Try direct JSON parse
+            # Try to extract JSON from response
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                content = json_match.group()
+            
             data = json.loads(content)
-            if not isinstance(data, list):
-                data = [data]
-
-            for item in data:
+            
+            # Parse mentions
+            mentions_data = data.get("mentions", [])
+            if not isinstance(mentions_data, list):
+                mentions_data = []
+                
+            for item in mentions_data:
                 if isinstance(item, dict):
                     brand = item.get("brand", "")
-                    # Only include if brand is in our list (case-insensitive match)
                     matched_brand = next(
                         (b for b in valid_brands if b.lower() == brand.lower()),
                         None
@@ -164,52 +189,13 @@ Return ONLY a JSON array of brand mentions found. If a brand is not mentioned, d
                             context=item.get("context", "")[:200],
                             is_recommended=item.get("isRecommended", False),
                         ))
+            
+            # Parse citations
+            citations_data = data.get("citations", [])
+            if isinstance(citations_data, list):
+                citations = [str(url) for url in citations_data if url and isinstance(url, str)]
 
         except json.JSONDecodeError:
-            # Try to extract JSON from response
-            try:
-                match = re.search(r'\[.*?\]', content, re.DOTALL)
-                if match:
-                    return self._parse_response(match.group(), valid_brands)
-            except:
-                pass
+            pass
 
-        return mentions
-
-    def _extract_with_regex(self, response_text: str, brands: list[str]) -> list[BrandMention]:
-        """Fallback: Extract mentions using regex."""
-        mentions = []
-        text_lower = response_text.lower()
-
-        for brand in brands:
-            # Count occurrences (case-insensitive)
-            pattern = re.compile(re.escape(brand), re.IGNORECASE)
-            matches = pattern.findall(response_text)
-            count = len(matches)
-
-            if count > 0:
-                # Find context (sentence containing the brand)
-                context = ""
-                sentences = re.split(r'[.!?]', response_text)
-                for sentence in sentences:
-                    if brand.lower() in sentence.lower():
-                        context = sentence.strip()[:200]
-                        break
-
-                # Determine rank by first occurrence position
-                first_pos = text_lower.find(brand.lower())
-
-                mentions.append(BrandMention(
-                    brand=brand,
-                    count=count,
-                    rank=0,  # Will be calculated later
-                    context=context,
-                    is_recommended=False,  # Can't determine without LLM
-                ))
-
-        # Sort by first occurrence and assign ranks
-        mentions.sort(key=lambda m: response_text.lower().find(m.brand.lower()))
-        for i, mention in enumerate(mentions):
-            mention.rank = i + 1
-
-        return mentions
+        return ExtractionResult(mentions=mentions, citations=citations)

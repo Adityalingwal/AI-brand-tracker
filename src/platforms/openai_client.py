@@ -8,7 +8,7 @@ from .base import BasePlatformClient, QueryResult, PlatformError
 class OpenAIClient(BasePlatformClient):
     """Client for OpenAI's ChatGPT API."""
 
-    MODEL = "gpt-4o"
+    MODEL = "gpt-5.2"
 
     def __init__(self, api_key: str, logger: Any):
         super().__init__(api_key, logger)

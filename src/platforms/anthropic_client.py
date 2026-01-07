@@ -8,7 +8,7 @@ from .base import BasePlatformClient, QueryResult, PlatformError
 class AnthropicClient(BasePlatformClient):
     """Client for Anthropic's Claude API."""
 
-    MODEL = "claude-sonnet-4-20250514"
+    MODEL = "claude-sonnet-4-5-20250929"
 
     def __init__(self, api_key: str, logger: Any):
         super().__init__(api_key, logger)
