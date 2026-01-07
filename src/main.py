@@ -260,7 +260,7 @@ async def main():
         )
 
         # ============================================================
-        # STEP 4: ANALYZE RESPONSES
+        # STEP 4: ANALYZE RESPONSES (PARALLEL IN BATCHES)
         # ============================================================
         progress.start_step("ANALYZE", "Analyzing responses for brand mentions and citations")
 
@@ -270,17 +270,15 @@ async def main():
 
         all_brands = actor_input.all_brands
         prompt_results: list[PromptResult] = []
+        
+        # Filter successful responses
+        valid_responses = [r for r in all_responses if r["success"] and r["response"]]
+        
+        # Batch size for parallel analysis
+        ANALYSIS_BATCH_SIZE = 5
 
-        for i, response_data in enumerate(all_responses):
-            if not response_data["success"] or not response_data["response"]:
-                continue
-
-            progress.log_progress(
-                i + 1,
-                len(all_responses),
-                f"Analyzing {response_data['platform']}:{response_data['prompt_id']}"
-            )
-
+        async def analyze_single_response(response_data: dict) -> PromptResult | None:
+            """Analyze a single response and return PromptResult."""
             try:
                 # Extract mentions and citations in single LLM call
                 extraction_result = await mention_extractor.extract(
@@ -302,7 +300,7 @@ async def main():
                 )
 
                 # Build prompt result
-                prompt_result = PromptResult(
+                return PromptResult(
                     prompt_id=response_data["prompt_id"],
                     prompt_text=response_data["prompt_text"],
                     platform=response_data["platform"],
@@ -323,28 +321,56 @@ async def main():
                         if c.lower() not in [m.brand.lower() for m in mentions]
                     ],
                 )
-
-                prompt_results.append(prompt_result)
-
-                # Push prompt_result to dataset immediately
-                await Actor.push_data(format_prompt_result(
-                    prompt_id=prompt_result.prompt_id,
-                    prompt_text=prompt_result.prompt_text,
-                    platform=prompt_result.platform,
-                    platform_model=prompt_result.platform_model,
-                    raw_response=prompt_result.raw_response,
-                    mentions=prompt_result.mentions,
-                    citations=prompt_result.citations,
-                    your_brand=actor_input.your_brand,
-                    competitors=actor_input.competitors,
-                ))
-
             except Exception as e:
                 error_tracker.add_error(
                     "analysis_failed",
                     str(e),
                     context=f"{response_data['platform']}:{response_data['prompt_id']}"
                 )
+                return None
+
+        # Process responses in parallel batches
+        logger.info(f"  Analyzing {len(valid_responses)} responses in batches of {ANALYSIS_BATCH_SIZE}...")
+        
+        for batch_start in range(0, len(valid_responses), ANALYSIS_BATCH_SIZE):
+            batch_end = min(batch_start + ANALYSIS_BATCH_SIZE, len(valid_responses))
+            batch_responses = valid_responses[batch_start:batch_end]
+            
+            progress.log_progress(
+                batch_end,
+                len(valid_responses),
+                f"Analyzing batch {batch_start//ANALYSIS_BATCH_SIZE + 1}"
+            )
+            
+            # Create tasks for this batch
+            tasks = [analyze_single_response(resp) for resp in batch_responses]
+            
+            # Execute batch in parallel
+            batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Collect valid results
+            for result in batch_results:
+                if isinstance(result, PromptResult):
+                    prompt_results.append(result)
+                    
+                    # Push prompt_result to dataset
+                    await Actor.push_data(format_prompt_result(
+                        prompt_id=result.prompt_id,
+                        prompt_text=result.prompt_text,
+                        platform=result.platform,
+                        platform_model=result.platform_model,
+                        raw_response=result.raw_response,
+                        mentions=result.mentions,
+                        citations=result.citations,
+                        your_brand=actor_input.your_brand,
+                        competitors=actor_input.competitors,
+                    ))
+                elif isinstance(result, Exception):
+                    error_tracker.add_error("analysis_exception", str(result))
+            
+            # Small delay between batches
+            if batch_end < len(valid_responses):
+                await asyncio.sleep(0.3)
 
         logger.info(f"  Analyzed {len(prompt_results)} responses")
 
