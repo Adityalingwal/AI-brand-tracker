@@ -40,10 +40,11 @@
         "promptCount": {
             "title": "Number of Prompts",
             "type": "integer",
-            "description": "How many prompts to generate and test (1-50). More prompts = more comprehensive analysis but higher cost.",
+            "description": "How many prompts to generate and test (1-15). More prompts = more comprehensive analysis but higher cost.",
             "default": 5,
             "minimum": 1,
-            "maximum": 50
+            "maximum": 15,
+            "prefill": 1
         },
         "customPrompts": {
             "title": "Custom Prompts (Optional)",

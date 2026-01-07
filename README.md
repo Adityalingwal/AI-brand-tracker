@@ -28,7 +28,7 @@ When users ask AI assistants questions like "What's the best CRM software?", som
 | `yourBrand`       | Yes         | Your brand name to track                            |
 | `competitors`     | No          | Competitor brands to compare (max 10)               |
 | `platforms`       | Yes         | AI platforms to query (min 1)                       |
-| `promptCount`     | No          | Number of prompts to generate (default: 5, max: 50) |
+| `promptCount`     | No          | Number of prompts to generate (default: 5, max: 15) |
 | `customPrompts`   | No          | Your own prompts to include                         |
 | `openaiApiKey`    | Conditional | Required for ChatGPT                                |
 | `anthropicApiKey` | Conditional | Required for Claude                                 |
@@ -192,7 +192,7 @@ You need API keys for the platforms you want to query:
 
 ## Limitations
 
-- Maximum 50 prompts per run
+- Maximum 15 prompts per run
 - Maximum 10 competitors
 - Requires at least one AI platform API key
 - API rate limits may slow down large runs

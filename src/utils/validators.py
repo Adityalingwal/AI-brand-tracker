@@ -76,13 +76,13 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
         errors.append(InputValidationError(
             message="Prompt count must be at least 1",
             field="promptCount",
-            help_text="Minimum: 1, Maximum: 50"
+            help_text="Minimum: 1, Maximum: 15"
         ))
-    elif actor_input.prompt_count > 50:
+    elif actor_input.prompt_count > 15:
         errors.append(InputValidationError(
-            message="Prompt count cannot exceed 50",
+            message="Prompt count cannot exceed 15",
             field="promptCount",
-            help_text="Minimum: 1, Maximum: 50"
+            help_text="Minimum: 1, Maximum: 15"
         ))
 
     # Validate competitors count
