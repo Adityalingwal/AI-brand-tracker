@@ -390,6 +390,25 @@ async def main():
             except Exception as e:
                 logger.debug(f"  PPE charging skipped: {e}")
 
+        # Push error/warning summary to dataset if there were any issues
+        if error_tracker.get_error_count() > 0 or len(error_tracker.warnings) > 0:
+            await Actor.push_data({
+                "type": "error_summary",
+                "totalErrors": error_tracker.get_error_count(),
+                "totalWarnings": len(error_tracker.warnings),
+                "hasFatalErrors": error_tracker.has_fatal_errors(),
+                "errors": [
+                    {
+                        "errorType": e.error_type,
+                        "message": e.message,
+                        "context": e.context,
+                        "recoverable": e.recoverable,
+                    }
+                    for e in error_tracker.errors[-10:]  # Last 10 errors
+                ],
+                "warnings": error_tracker.warnings[-5:],  # Last 5 warnings
+            })
+
         progress.complete_step("FINALIZE", items=1)
 
         # ============================================================

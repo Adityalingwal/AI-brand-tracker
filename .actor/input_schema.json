@@ -35,8 +35,7 @@
                 "enum": ["chatgpt", "claude", "gemini", "perplexity"],
                 "enumTitles": ["ChatGPT (OpenAI)", "Claude (Anthropic)", "Gemini (Google)", "Perplexity AI"]
             },
-            "minItems": 1,
-            "prefill": ["chatgpt"]
+            "minItems": 1
         },
         "promptCount": {
             "title": "Number of Prompts",

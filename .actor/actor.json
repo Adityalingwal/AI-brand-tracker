@@ -100,6 +100,7 @@
                 "brand_summary",
                 "leaderboard",
                 "run_summary",
+                "error_summary",
                 "validation_error",
                 "error"
               ],
