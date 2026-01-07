@@ -71,8 +71,6 @@ Return ONLY a JSON array of {count} strings. Example format:
                 prompts = await self._generate_with_openai(user_prompt)
             elif self.provider == Platform.CLAUDE:
                 prompts = await self._generate_with_anthropic(user_prompt)
-            elif self.provider == Platform.PERPLEXITY:
-                prompts = await self._generate_with_perplexity(user_prompt)
             else:
                 prompts = self._generate_fallback(category, count)
 
@@ -148,34 +146,6 @@ Return ONLY a JSON array of {count} strings. Example format:
                 content += block.text
 
         return self._parse_json_response(content)
-
-    async def _generate_with_perplexity(self, prompt: str) -> list[str]:
-        """Generate prompts using Perplexity."""
-        import httpx
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                "https://api.perplexity.ai/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "llama-3.1-sonar-large-128k-online",
-                    "messages": [
-                        {"role": "system", "content": self.SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.8,
-                },
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                content = data.get("choices", [{}])[0].get("message", {}).get("content", "[]")
-                return self._parse_json_response(content)
-
-        return []
 
     def _parse_json_response(self, response: str) -> list[str]:
         """Parse JSON array from LLM response."""

@@ -10,7 +10,6 @@ class Platform(Enum):
     CHATGPT = "chatgpt"
     CLAUDE = "claude"
     GEMINI = "gemini"
-    PERPLEXITY = "perplexity"
 
 
 # Model configurations (best available, hardcoded for v1)
@@ -18,7 +17,6 @@ PLATFORM_MODELS = {
     Platform.CHATGPT: "gpt-4o",
     Platform.CLAUDE: "claude-sonnet-4-20250514",
     Platform.GEMINI: "gemini-2.5-flash",
-    Platform.PERPLEXITY: "llama-3.1-sonar-large-128k-online",
 }
 
 
@@ -28,7 +26,6 @@ class APIKeys:
     openai: Optional[str] = None
     anthropic: Optional[str] = None
     google: Optional[str] = None
-    perplexity: Optional[str] = None
 
     def get_key_for_platform(self, platform: Platform) -> Optional[str]:
         """Get API key for a specific platform."""
@@ -36,13 +33,12 @@ class APIKeys:
             Platform.CHATGPT: self.openai,
             Platform.CLAUDE: self.anthropic,
             Platform.GEMINI: self.google,
-            Platform.PERPLEXITY: self.perplexity,
         }
         return mapping.get(platform)
 
     def get_first_available_key(self) -> tuple[Optional[str], Optional[Platform]]:
         """Get first available API key (for prompt generation)."""
-        for platform in [Platform.GEMINI, Platform.CHATGPT, Platform.CLAUDE, Platform.PERPLEXITY]:
+        for platform in [Platform.GEMINI, Platform.CHATGPT, Platform.CLAUDE]:
             key = self.get_key_for_platform(platform)
             if key:
                 return key, platform
@@ -80,7 +76,6 @@ class ActorInput:
             openai=raw.get("openaiApiKey", "").strip() or None,
             anthropic=raw.get("anthropicApiKey", "").strip() or None,
             google=raw.get("googleApiKey", "").strip() or None,
-            perplexity=raw.get("perplexityApiKey", "").strip() or None,
         )
 
         return cls(

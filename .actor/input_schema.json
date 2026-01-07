@@ -32,8 +32,8 @@
             "editor": "select",
             "items": {
                 "type": "string",
-                "enum": ["chatgpt", "claude", "gemini", "perplexity"],
-                "enumTitles": ["ChatGPT (OpenAI)", "Claude (Anthropic)", "Gemini (Google)", "Perplexity AI"]
+                "enum": ["chatgpt", "claude", "gemini"],
+                "enumTitles": ["ChatGPT (OpenAI)", "Claude (Anthropic)", "Gemini (Google)"]
             },
             "minItems": 1
         },
@@ -70,13 +70,6 @@
             "title": "Google AI API Key",
             "type": "string",
             "description": "Required if using Gemini. Get from: aistudio.google.com/apikey",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "perplexityApiKey": {
-            "title": "Perplexity API Key",
-            "type": "string",
-            "description": "Required if using Perplexity. Get from: perplexity.ai/settings/api",
             "editor": "textfield",
             "isSecret": true
         },

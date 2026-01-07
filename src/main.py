@@ -1,7 +1,7 @@
 """
 AI Brand Tracker - Main Orchestration.
 
-Track brand visibility across AI platforms (ChatGPT, Claude, Gemini, Perplexity).
+Track brand visibility across AI platforms (ChatGPT, Claude, Gemini).
 """
 
 import asyncio
@@ -18,7 +18,6 @@ from .platforms import (
     OpenAIClient,
     AnthropicClient,
     GoogleClient,
-    PerplexityClient,
 )
 from .analyzer import MentionExtractor, CitationExtractor, MetricsCalculator
 from .output import (
@@ -41,8 +40,6 @@ def create_platform_client(
         return AnthropicClient(api_key, logger)
     elif platform == Platform.GEMINI:
         return GoogleClient(api_key, logger)
-    elif platform == Platform.PERPLEXITY:
-        return PerplexityClient(api_key, logger)
     return None
 
 

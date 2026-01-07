@@ -87,8 +87,6 @@ Return ONLY a JSON array of brand mentions found. If a brand is not mentioned, d
             content = await self._call_openai(user_prompt)
         elif self.provider == Platform.CLAUDE:
             content = await self._call_anthropic(user_prompt)
-        elif self.provider == Platform.PERPLEXITY:
-            content = await self._call_perplexity(user_prompt)
 
         return self._parse_response(content, brands)
 
@@ -139,31 +137,6 @@ Return ONLY a JSON array of brand mentions found. If a brand is not mentioned, d
             if hasattr(block, "text"):
                 content += block.text
         return content
-
-    async def _call_perplexity(self, prompt: str) -> str:
-        """Call Perplexity API."""
-        import httpx
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                "https://api.perplexity.ai/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "llama-3.1-sonar-large-128k-online",
-                    "messages": [
-                        {"role": "system", "content": self.SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
-                },
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                return data.get("choices", [{}])[0].get("message", {}).get("content", "")
-        return ""
 
     def _parse_response(self, content: str, valid_brands: list[str]) -> list[BrandMention]:
         """Parse LLM response into BrandMention objects."""

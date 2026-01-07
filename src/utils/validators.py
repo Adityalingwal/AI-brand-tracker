@@ -51,7 +51,7 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
         errors.append(InputValidationError(
             message="At least one AI platform must be selected",
             field="platforms",
-            help_text="Select from: ChatGPT, Claude, Gemini, Perplexity"
+            help_text="Select from: ChatGPT, Claude, Gemini"
         ))
 
     # Check API keys for selected platforms
@@ -59,7 +59,6 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
         Platform.CHATGPT: ("openaiApiKey", "OpenAI API key"),
         Platform.CLAUDE: ("anthropicApiKey", "Anthropic API key"),
         Platform.GEMINI: ("googleApiKey", "Google AI API key"),
-        Platform.PERPLEXITY: ("perplexityApiKey", "Perplexity API key"),
     }
 
     for platform in actor_input.platforms:
