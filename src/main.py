@@ -260,7 +260,7 @@ async def main():
         )
 
         # ============================================================
-        # STEP 4: ANALYZE RESPONSES (PARALLEL IN BATCHES)
+        # STEP 4: ANALYZE RESPONSES (PER PLATFORM - 1 LLM CALL EACH)
         # ============================================================
         progress.start_step("ANALYZE", "Analyzing responses for brand mentions and citations")
 
@@ -271,106 +271,114 @@ async def main():
         all_brands = actor_input.all_brands
         prompt_results: list[PromptResult] = []
         
-        # Filter successful responses
+        # Filter successful responses and group by platform
         valid_responses = [r for r in all_responses if r["success"] and r["response"]]
         
-        # Batch size for parallel analysis
-        ANALYSIS_BATCH_SIZE = 5
+        # Group responses by platform
+        platform_responses: dict[str, list[dict]] = {}
+        for resp in valid_responses:
+            platform = resp["platform"]
+            if platform not in platform_responses:
+                platform_responses[platform] = []
+            platform_responses[platform].append(resp)
 
-        async def analyze_single_response(response_data: dict) -> PromptResult | None:
-            """Analyze a single response and return PromptResult."""
+        async def analyze_platform_batch(platform: str, responses: list[dict]) -> list[PromptResult]:
+            """Analyze all responses from a platform in a single LLM call."""
+            logger.info(f"  Analyzing {platform}: {len(responses)} responses...")
+            
             try:
-                # Extract mentions and citations in single LLM call
-                extraction_result = await mention_extractor.extract(
-                    response_data["response"],
-                    all_brands
-                )
+                # Batch extract mentions and citations for all responses
+                extraction_results = await mention_extractor.extract_batch(responses, all_brands)
+                
+                # Create a map of prompt_id to extraction result
+                extraction_map = {r.prompt_id: r for r in extraction_results}
+                
+                results = []
+                for resp in responses:
+                    prompt_id = resp["prompt_id"]
+                    extraction = extraction_map.get(prompt_id)
+                    
+                    if not extraction:
+                        extraction = type('obj', (object,), {'mentions': [], 'citations': []})()
+                    
+                    mentions = extraction.mentions
+                    citations = extraction.citations
 
-                mentions = extraction_result.mentions
-                citations = extraction_result.citations
+                    # Determine winner/loser
+                    prompt_winner = metrics_calculator.determine_winner(mentions)
+                    prompt_loser = metrics_calculator.determine_loser(mentions)
 
-                # Determine winner/loser
-                prompt_winner = metrics_calculator.determine_winner(mentions)
-                prompt_loser = metrics_calculator.determine_loser(mentions)
+                    # Check your brand
+                    your_brand_mention = next(
+                        (m for m in mentions if m.brand.lower() == actor_input.your_brand.lower()),
+                        None
+                    )
 
-                # Check your brand
-                your_brand_mention = next(
-                    (m for m in mentions if m.brand.lower() == actor_input.your_brand.lower()),
-                    None
-                )
-
-                # Build prompt result
-                return PromptResult(
-                    prompt_id=response_data["prompt_id"],
-                    prompt_text=response_data["prompt_text"],
-                    platform=response_data["platform"],
-                    platform_model=response_data["model"],
-                    raw_response=response_data["response"],
-                    mentions=mentions,
-                    citations=citations,
-                    prompt_winner=prompt_winner,
-                    prompt_loser=prompt_loser,
-                    your_brand_mentioned=your_brand_mention is not None,
-                    your_brand_rank=your_brand_mention.rank if your_brand_mention else None,
-                    competitors_mentioned=[
-                        m.brand for m in mentions
-                        if m.brand.lower() in [c.lower() for c in actor_input.competitors]
-                    ],
-                    competitors_missed=[
-                        c for c in actor_input.competitors
-                        if c.lower() not in [m.brand.lower() for m in mentions]
-                    ],
-                )
+                    # Build prompt result
+                    result = PromptResult(
+                        prompt_id=resp["prompt_id"],
+                        prompt_text=resp["prompt_text"],
+                        platform=resp["platform"],
+                        platform_model=resp["model"],
+                        raw_response=resp["response"],
+                        mentions=mentions,
+                        citations=citations,
+                        prompt_winner=prompt_winner,
+                        prompt_loser=prompt_loser,
+                        your_brand_mentioned=your_brand_mention is not None,
+                        your_brand_rank=your_brand_mention.rank if your_brand_mention else None,
+                        competitors_mentioned=[
+                            m.brand for m in mentions
+                            if m.brand.lower() in [c.lower() for c in actor_input.competitors]
+                        ],
+                        competitors_missed=[
+                            c for c in actor_input.competitors
+                            if c.lower() not in [m.brand.lower() for m in mentions]
+                        ],
+                    )
+                    results.append(result)
+                
+                logger.info(f"  Completed {platform}: {len(results)} results")
+                return results
+                
             except Exception as e:
                 error_tracker.add_error(
-                    "analysis_failed",
+                    "platform_analysis_failed",
                     str(e),
-                    context=f"{response_data['platform']}:{response_data['prompt_id']}"
+                    context=f"platform:{platform}"
                 )
-                return None
+                return []
 
-        # Process responses in parallel batches
-        logger.info(f"  Analyzing {len(valid_responses)} responses in batches of {ANALYSIS_BATCH_SIZE}...")
+        # Analyze all platforms in parallel (1 LLM call per platform)
+        logger.info(f"  Analyzing {len(platform_responses)} platforms in parallel (1 LLM call each)...")
         
-        for batch_start in range(0, len(valid_responses), ANALYSIS_BATCH_SIZE):
-            batch_end = min(batch_start + ANALYSIS_BATCH_SIZE, len(valid_responses))
-            batch_responses = valid_responses[batch_start:batch_end]
-            
-            progress.log_progress(
-                batch_end,
-                len(valid_responses),
-                f"Analyzing batch {batch_start//ANALYSIS_BATCH_SIZE + 1}"
-            )
-            
-            # Create tasks for this batch
-            tasks = [analyze_single_response(resp) for resp in batch_responses]
-            
-            # Execute batch in parallel
-            batch_results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            # Collect valid results
-            for result in batch_results:
-                if isinstance(result, PromptResult):
-                    prompt_results.append(result)
+        platform_tasks = [
+            analyze_platform_batch(platform, responses)
+            for platform, responses in platform_responses.items()
+        ]
+        
+        platform_results = await asyncio.gather(*platform_tasks, return_exceptions=True)
+        
+        # Collect all results
+        for result in platform_results:
+            if isinstance(result, Exception):
+                error_tracker.add_error("platform_analysis_exception", str(result))
+            elif isinstance(result, list):
+                for prompt_result in result:
+                    prompt_results.append(prompt_result)
                     
                     # Push prompt_result to dataset
                     await Actor.push_data(format_prompt_result(
-                        prompt_id=result.prompt_id,
-                        prompt_text=result.prompt_text,
-                        platform=result.platform,
-                        platform_model=result.platform_model,
-                        raw_response=result.raw_response,
-                        mentions=result.mentions,
-                        citations=result.citations,
+                        prompt_id=prompt_result.prompt_id,
+                        prompt_text=prompt_result.prompt_text,
+                        platform=prompt_result.platform,
+                        platform_model=prompt_result.platform_model,
+                        raw_response=prompt_result.raw_response,
+                        mentions=prompt_result.mentions,
+                        citations=prompt_result.citations,
                         your_brand=actor_input.your_brand,
                         competitors=actor_input.competitors,
                     ))
-                elif isinstance(result, Exception):
-                    error_tracker.add_error("analysis_exception", str(result))
-            
-            # Small delay between batches
-            if batch_end < len(valid_responses):
-                await asyncio.sleep(0.3)
 
         logger.info(f"  Analyzed {len(prompt_results)} responses")
 
