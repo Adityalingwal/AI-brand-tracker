@@ -1,0 +1,8 @@
+{
+  "category": "CRM software",
+  "yourBrand": "Salesforce",
+  "competitors": ["HubSpot", "Pipedrive"],
+  "platforms": ["chatgpt"],
+  "promptCount": 3,
+  "openaiApiKey": "test-key-for-validation"
+}

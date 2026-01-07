@@ -1,0 +1,53 @@
+{
+    "actorSpecification": 1,
+    "name": "ai-brand-tracker",
+    "title": "AI Brand Tracker",
+    "description": "Track your brand's visibility across AI platforms (ChatGPT, Claude, Gemini, Perplexity). Analyze mentions, citations, and competitive positioning.",
+    "version": "1.0.0",
+    "buildTag": "latest",
+    "meta": {
+        "templateId": "python-playwright"
+    },
+    "input": "./input_schema.json",
+    "dockerfile": "../Dockerfile",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "AI Brand Visibility Results",
+            "views": {
+                "overview": {
+                    "title": "Overview",
+                    "transformation": {
+                        "fields": ["type", "brand", "visibilityScore", "citationShare", "totalMentions"]
+                    },
+                    "display": {
+                        "component": "table",
+                        "properties": {
+                            "type": { "label": "Type" },
+                            "brand": { "label": "Brand" },
+                            "visibilityScore": { "label": "Visibility %" },
+                            "citationShare": { "label": "Citation Share %" },
+                            "totalMentions": { "label": "Mentions" }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "pricingModel": {
+        "pricingType": "PAY_PER_EVENT",
+        "events": [
+            {
+                "eventName": "prompt-analyzed",
+                "displayName": "Prompt Analyzed",
+                "pricePerEvent": 0.02,
+                "pricePerEventByTier": {
+                    "FREE": 0.02,
+                    "BRONZE": 0.018,
+                    "SILVER": 0.015,
+                    "GOLD": 0.012
+                }
+            }
+        ]
+    }
+}

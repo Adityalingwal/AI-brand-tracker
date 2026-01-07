@@ -1,0 +1,32 @@
+{
+  "type": "leaderboard",
+  "rankings": [
+    {
+      "rank": 1,
+      "brand": "Salesforce",
+      "visibilityScore": 0.0,
+      "citationShare": 0.0,
+      "totalMentions": 0,
+      "promptsWon": 0
+    },
+    {
+      "rank": 2,
+      "brand": "HubSpot",
+      "visibilityScore": 0.0,
+      "citationShare": 0.0,
+      "totalMentions": 0,
+      "promptsWon": 0
+    },
+    {
+      "rank": 3,
+      "brand": "Pipedrive",
+      "visibilityScore": 0.0,
+      "citationShare": 0.0,
+      "totalMentions": 0,
+      "promptsWon": 0
+    }
+  ],
+  "platformLeaderboards": {
+    "chatgpt": []
+  }
+}

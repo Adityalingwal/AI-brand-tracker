@@ -1,0 +1,95 @@
+{
+    "title": "AI Brand Tracker",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "category": {
+            "title": "Industry Category",
+            "type": "string",
+            "description": "The industry or niche to analyze (e.g., 'CRM software', 'project management tools', 'email marketing platforms')",
+            "editor": "textfield",
+            "prefill": "CRM software"
+        },
+        "yourBrand": {
+            "title": "Your Brand",
+            "type": "string",
+            "description": "Your brand name to track visibility for",
+            "editor": "textfield",
+            "prefill": "Salesforce"
+        },
+        "competitors": {
+            "title": "Competitor Brands (Optional)",
+            "type": "array",
+            "description": "Competitor brands to compare against. Leave empty to track only your brand.",
+            "editor": "stringList",
+            "prefill": [],
+            "maxItems": 10
+        },
+        "platforms": {
+            "title": "AI Platforms",
+            "type": "array",
+            "description": "Select which AI platforms to query. You must provide API keys for selected platforms below.",
+            "editor": "select",
+            "items": {
+                "type": "string",
+                "enum": ["chatgpt", "claude", "gemini", "perplexity"],
+                "enumTitles": ["ChatGPT (OpenAI)", "Claude (Anthropic)", "Gemini (Google)", "Perplexity AI"]
+            },
+            "minItems": 1,
+            "prefill": ["chatgpt"]
+        },
+        "promptCount": {
+            "title": "Number of Prompts",
+            "type": "integer",
+            "description": "How many prompts to generate and test (1-50). More prompts = more comprehensive analysis but higher cost.",
+            "default": 5,
+            "minimum": 1,
+            "maximum": 50
+        },
+        "customPrompts": {
+            "title": "Custom Prompts (Optional)",
+            "type": "array",
+            "description": "Your own prompts to include in addition to auto-generated ones. Example: 'What is the best CRM for startups?'",
+            "editor": "stringList",
+            "maxItems": 20
+        },
+        "openaiApiKey": {
+            "title": "OpenAI API Key",
+            "type": "string",
+            "description": "Required if using ChatGPT. Get from: platform.openai.com/api-keys",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "anthropicApiKey": {
+            "title": "Anthropic API Key",
+            "type": "string",
+            "description": "Required if using Claude. Get from: console.anthropic.com",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "googleApiKey": {
+            "title": "Google AI API Key",
+            "type": "string",
+            "description": "Required if using Gemini. Get from: aistudio.google.com/apikey",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "perplexityApiKey": {
+            "title": "Perplexity API Key",
+            "type": "string",
+            "description": "Required if using Perplexity. Get from: perplexity.ai/settings/api",
+            "editor": "textfield",
+            "isSecret": true
+        },
+        "proxyConfiguration": {
+            "title": "Proxy Configuration",
+            "type": "object",
+            "description": "Proxy settings (optional)",
+            "editor": "proxy",
+            "prefill": {
+                "useApifyProxy": true
+            }
+        }
+    },
+    "required": ["category", "yourBrand", "platforms"]
+}
