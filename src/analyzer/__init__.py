@@ -1,7 +1,6 @@
 """Response analysis modules."""
 
-from .mention_extractor import MentionExtractor
-from .citation_extractor import CitationExtractor
+from .mention_extractor import MentionExtractor, ExtractionResult
 from .metrics_calculator import MetricsCalculator
 
-__all__ = ["MentionExtractor", "CitationExtractor", "MetricsCalculator"]
+__all__ = ["MentionExtractor", "ExtractionResult", "MetricsCalculator"]

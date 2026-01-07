@@ -19,7 +19,7 @@ from .platforms import (
     AnthropicClient,
     GoogleClient,
 )
-from .analyzer import MentionExtractor, CitationExtractor, MetricsCalculator
+from .analyzer import MentionExtractor, MetricsCalculator
 from .output import (
     format_prompt_result,
     format_brand_summary,
@@ -262,11 +262,10 @@ async def main():
         # ============================================================
         # STEP 4: ANALYZE RESPONSES
         # ============================================================
-        progress.start_step("ANALYZE", "Analyzing responses for brand mentions")
+        progress.start_step("ANALYZE", "Analyzing responses for brand mentions and citations")
 
         # Initialize analyzers (use same key as prompt generation)
         mention_extractor = MentionExtractor(gen_key, gen_platform, logger)
-        citation_extractor = CitationExtractor(logger)
         metrics_calculator = MetricsCalculator()
 
         all_brands = actor_input.all_brands
@@ -283,14 +282,14 @@ async def main():
             )
 
             try:
-                # Extract mentions
-                mentions = await mention_extractor.extract(
+                # Extract mentions and citations in single LLM call
+                extraction_result = await mention_extractor.extract(
                     response_data["response"],
                     all_brands
                 )
 
-                # Extract citations
-                citations = citation_extractor.extract(response_data["response"])
+                mentions = extraction_result.mentions
+                citations = extraction_result.citations
 
                 # Determine winner/loser
                 prompt_winner = metrics_calculator.determine_winner(mentions)
