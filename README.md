@@ -350,84 +350,6 @@ This Actor uses **Pay-Per-Event** pricing. You are not charged for Apify platfor
 | ----------------- | ----------------- | ----------------- |
 | `prompt-analyzed` | $0.02             | $0.012            |
 
-### Cost Examples
-
-| Configuration            | Events | Cost (Free) | Cost (Gold) |
-| ------------------------ | ------ | ----------- | ----------- |
-| 5 prompts × 1 platform   | 5      | $0.10       | $0.06       |
-| 5 prompts × 2 platforms  | 10     | $0.20       | $0.12       |
-| 10 prompts × 3 platforms | 30     | $0.60       | $0.36       |
-| 15 prompts × 3 platforms | 45     | $0.90       | $0.54       |
-
-**Note:** You also pay for AI API calls directly to OpenAI, Anthropic, or Google based on their pricing.
-
----
-
-## 🔑 API Keys
-
-You need API keys for the platforms you want to query:
-
-| Platform | Get API Key From                                                     | Pricing Page                                           |
-| -------- | -------------------------------------------------------------------- | ------------------------------------------------------ |
-| ChatGPT  | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | [openai.com/pricing](https://openai.com/pricing)       |
-| Claude   | [console.anthropic.com](https://console.anthropic.com)               | [anthropic.com/pricing](https://anthropic.com/pricing) |
-| Gemini   | [aistudio.google.com/apikey](https://aistudio.google.com/apikey)     | [ai.google.dev/pricing](https://ai.google.dev/pricing) |
-
----
-
-## 🔌 Integrations & API Usage
-
-You can run this Actor and integrate it with other systems programmatically using the Apify API. Choose your preferred language from the API tab of the Actor's page in the Apify Store. You'll need an Apify account and API token (found in Integrations settings in Apify Console).
-
-### Example: JavaScript/Node.js
-
-```javascript
-import { ApifyClient } from "apify-client";
-
-const client = new ApifyClient({ token: "YOUR_APIFY_TOKEN" });
-
-const input = {
-  category: "CRM software",
-  yourBrand: "Salesforce",
-  competitors: ["HubSpot", "Pipedrive"],
-  platforms: ["chatgpt", "claude"],
-  promptCount: 5,
-  openaiApiKey: "sk-...",
-  anthropicApiKey: "sk-ant-...",
-};
-
-const run = await client.actor("YOUR_ACTOR_ID").call(input);
-const { items } = await client.dataset(run.defaultDatasetId).listItems();
-
-// Filter for specific record types
-const brandSummaries = items.filter((i) => i.type === "brand_summary");
-const leaderboard = items.find((i) => i.type === "leaderboard");
-```
-
-### Example: Python
-
-```python
-from apify_client import ApifyClient
-
-client = ApifyClient("YOUR_APIFY_TOKEN")
-
-run_input = {
-    "category": "CRM software",
-    "yourBrand": "Salesforce",
-    "competitors": ["HubSpot", "Pipedrive"],
-    "platforms": ["chatgpt", "claude"],
-    "promptCount": 5,
-    "openaiApiKey": "sk-...",
-    "anthropicApiKey": "sk-ant-...",
-}
-
-run = client.actor("YOUR_ACTOR_ID").call(run_input=run_input)
-
-for item in client.dataset(run["defaultDatasetId"]).iterate_items():
-    if item["type"] == "brand_summary":
-        print(f"{item['brand']}: {item['overallMetrics']['visibilityScore']}%")
-```
-
 ---
 
 ## ❓ FAQ
@@ -452,21 +374,16 @@ Yes! Set `promptCount` to 0 and provide your own prompts in `customPrompts`. Thi
 
 For ongoing monitoring, weekly or bi-weekly runs are recommended. AI platform responses can change as they update their models and training data.
 
-**Q: Is this legal to use?**
-
-Yes. This Actor queries AI platforms through their official APIs using your own API keys. You're subject to each platform's terms of service.
-
 ---
 
 ## 🧩 Known Limitations
 
-| Limitation             | Details                                                               |
-| ---------------------- | --------------------------------------------------------------------- |
-| Maximum 15 prompts     | Auto-generated prompts capped at 15 per run                           |
-| Maximum 10 competitors | Up to 10 competitor brands can be tracked simultaneously              |
-| API rate limits        | High prompt counts may trigger rate limiting on AI platforms          |
-| API key required       | At least one platform API key must be provided                        |
-| English prompts only   | Generated prompts are in English (custom prompts can be any language) |
+| Limitation             | Details                                                      |
+| ---------------------- | ------------------------------------------------------------ |
+| Maximum 15 prompts     | Auto-generated prompts capped at 15 per run                  |
+| Maximum 10 competitors | Up to 10 competitor brands can be tracked simultaneously     |
+| API rate limits        | High prompt counts may trigger rate limiting on AI platforms |
+| API key required       | At least one platform API key must be provided               |
 
 ---
 
@@ -485,7 +402,7 @@ If you encounter problems or have feature requests, please open an issue on the 
 **Core Capabilities:**
 
 - Multi-platform AI querying (ChatGPT, Claude, Gemini)
-- LLM-powered prompt generation with fallback templates
+- LLM-powered prompt generation
 - Brand mention extraction with count, rank, and context
 - Citation/URL extraction from AI responses
 - Visibility score and citation share calculation
@@ -510,7 +427,3 @@ If you encounter problems or have feature requests, please open an issue on the 
 - Structured dataset output with multiple record types
 - Full input validation with helpful error messages
 - Progress tracking and execution logging
-
----
-
-Built for the [Apify $1M Challenge](https://apify.com/challenge) 🏆
