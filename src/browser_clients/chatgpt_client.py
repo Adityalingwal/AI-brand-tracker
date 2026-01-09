@@ -8,28 +8,13 @@ from .base import BaseBrowserClient, BrowserQueryResult, BrowserClientError
 class ChatGPTBrowserClient(BaseBrowserClient):
     """Browser-based client for ChatGPT (chatgpt.com) - no login required."""
 
-    # CSS Selectors
+    # CSS Selectors (only the ones that work)
     SELECTORS = {
-        # Input textbox - the contenteditable paragraph inside prompt-textarea
         "textbox": "#prompt-textarea",
-        "textbox_p": "#prompt-textarea > p",
-        
-        # Response container - assistant messages
-        "response_article": "article[data-message-author-role='assistant']",
-        "response_content": "article[data-message-author-role='assistant'] .markdown",
-        
-        # Buttons
-        "send_button": "[data-testid='send-button']",
         "stop_button": "[data-testid='stop-button']",
-        
-        # Cookie/popup dismissal
         "cookie_accept": "button:has-text('Accept all')",
         "maybe_later": "button:has-text('Stay logged out'), button:has-text('Maybe later')",
-        
-        # Cloudflare captcha
         "cloudflare_checkbox": "input[type='checkbox']",
-        
-        # Loading indicator
         "loading": ".result-streaming",
     }
 
@@ -137,59 +122,19 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         return len(last_content) > 0
 
     async def _get_last_response_text(self) -> str:
-        """Get the text from the last assistant response using multiple strategies."""
+        """Get the text from the last assistant response."""
         try:
-            # Strategy 1: Try the data-message-author-role attribute
-            articles = await self.page.query_selector_all("article[data-message-author-role='assistant']")
-            if articles:
-                last_article = articles[-1]
-                # Try markdown content first
-                markdown = await last_article.query_selector(".markdown")
-                if markdown:
-                    text = await markdown.inner_text()
-                    if text.strip():
-                        return text.strip()
-                # Fallback to article text
-                text = await last_article.inner_text()
-                if text.strip():
-                    return text.strip()
-            
-            # Strategy 2: Try to find any article with response content
+            # Get all article elements - first is user query, last is response
             articles = await self.page.query_selector_all("article")
-            if len(articles) >= 2:  # First is user query, second is response
-                last_article = articles[-1]
-                text = await last_article.inner_text()
-                if text.strip():
-                    return text.strip()
             
-            # Strategy 3: JavaScript-based extraction (more robust)
-            js_result = await self.page.evaluate("""
-                () => {
-                    // Try to find assistant messages
-                    const articles = document.querySelectorAll('article');
-                    if (articles.length >= 2) {
-                        // Last article should be the response
-                        const lastArticle = articles[articles.length - 1];
-                        const markdown = lastArticle.querySelector('.markdown, .prose');
-                        if (markdown) return markdown.innerText;
-                        return lastArticle.innerText;
-                    }
-                    
-                    // Try alternative: look for any div with substantial text after the input
-                    const allDivs = document.querySelectorAll('div[class*="text"]');
-                    for (const div of allDivs) {
-                        if (div.innerText && div.innerText.length > 100) {
-                            return div.innerText;
-                        }
-                    }
-                    
-                    return '';
-                }
-            """)
-            if js_result and js_result.strip():
-                return js_result.strip()
+            if len(articles) < 2:
+                return ""
             
-            return ""
+            # Last article is the response
+            last_article = articles[-1]
+            text = await last_article.inner_text()
+            
+            return text.strip() if text else ""
             
         except Exception as e:
             self.logger.warning(f"  Response extraction error: {e}")
