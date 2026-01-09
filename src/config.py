@@ -6,43 +6,47 @@ from enum import Enum
 
 
 class Platform(Enum):
-    """Supported AI platforms."""
+    """Supported AI platforms (browser-scraped, no API needed)."""
     CHATGPT = "chatgpt"
-    CLAUDE = "claude"
     GEMINI = "gemini"
+    PERPLEXITY = "perplexity"
 
 
-# Model configurations (best available, hardcoded for v1)
+# Model names (these are the free tier models we get via browser)
 PLATFORM_MODELS = {
-    Platform.CHATGPT: "gpt-4o",
-    Platform.CLAUDE: "claude-sonnet-4-20250514",
-    Platform.GEMINI: "gemini-2.5-flash",
+    Platform.CHATGPT: "gpt-4o-mini (free)",
+    Platform.GEMINI: "gemini-2.0-flash (free)",
+    Platform.PERPLEXITY: "perplexity-default (free)",
 }
 
 
+class AnalysisProvider(Enum):
+    """Supported providers for LLM-based analysis."""
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    GOOGLE = "google"
+
+
 @dataclass
-class APIKeys:
-    """API keys for various platforms."""
+class AnalysisAPIKeys:
+    """API keys for LLM analysis (user provides at least one)."""
     openai: Optional[str] = None
     anthropic: Optional[str] = None
     google: Optional[str] = None
 
-    def get_key_for_platform(self, platform: Platform) -> Optional[str]:
-        """Get API key for a specific platform."""
-        mapping = {
-            Platform.CHATGPT: self.openai,
-            Platform.CLAUDE: self.anthropic,
-            Platform.GEMINI: self.google,
-        }
-        return mapping.get(platform)
-
-    def get_first_available_key(self) -> tuple[Optional[str], Optional[Platform]]:
-        """Get first available API key (for prompt generation)."""
-        for platform in [Platform.GEMINI, Platform.CHATGPT, Platform.CLAUDE]:
-            key = self.get_key_for_platform(platform)
-            if key:
-                return key, platform
+    def get_first_available(self) -> tuple[Optional[str], Optional[AnalysisProvider]]:
+        """Get first available API key for analysis."""
+        if self.google:
+            return self.google, AnalysisProvider.GOOGLE
+        if self.openai:
+            return self.openai, AnalysisProvider.OPENAI
+        if self.anthropic:
+            return self.anthropic, AnalysisProvider.ANTHROPIC
         return None, None
+
+    def has_any_key(self) -> bool:
+        """Check if any API key is available."""
+        return bool(self.openai or self.anthropic or self.google)
 
 
 @dataclass
@@ -54,7 +58,7 @@ class ActorInput:
     platforms: list[Platform] = field(default_factory=list)
     prompt_count: int = 1
     custom_prompts: list[str] = field(default_factory=list)
-    api_keys: APIKeys = field(default_factory=APIKeys)
+    analysis_keys: AnalysisAPIKeys = field(default_factory=AnalysisAPIKeys)
     proxy_config: Optional[dict] = None
 
     @property
@@ -70,9 +74,9 @@ class ActorInput:
             try:
                 platforms.append(Platform(p.lower()))
             except ValueError:
-                pass  # Skip invalid platforms
+                pass  # Skip invalid platforms (e.g., old 'claude' value)
 
-        api_keys = APIKeys(
+        analysis_keys = AnalysisAPIKeys(
             openai=raw.get("openaiApiKey", "").strip() or None,
             anthropic=raw.get("anthropicApiKey", "").strip() or None,
             google=raw.get("googleApiKey", "").strip() or None,
@@ -85,7 +89,7 @@ class ActorInput:
             platforms=platforms,
             prompt_count=raw.get("promptCount", 5),
             custom_prompts=[p.strip() for p in raw.get("customPrompts", []) if p.strip()],
-            api_keys=api_keys,
+            analysis_keys=analysis_keys,
             proxy_config=raw.get("proxyConfiguration"),
         )
 

@@ -28,13 +28,14 @@
         "platforms": {
             "title": "AI Platforms",
             "type": "array",
-            "description": "Select which AI platforms to query. You must provide API keys for selected platforms below.",
+            "description": "Select which AI platforms to query (no API keys needed for these - we use browser automation)",
             "editor": "select",
             "items": {
                 "type": "string",
-                "enum": ["chatgpt", "claude", "gemini"],
-                "enumTitles": ["ChatGPT (OpenAI)", "Claude (Anthropic)", "Gemini (Google)"]
+                "enum": ["chatgpt", "gemini", "perplexity"],
+                "enumTitles": ["ChatGPT (OpenAI)", "Gemini (Google)", "Perplexity AI"]
             },
+            "prefill": ["chatgpt"],
             "minItems": 1
         },
         "promptCount": {
@@ -54,30 +55,30 @@
             "maxItems": 5
         },
         "openaiApiKey": {
-            "title": "OpenAI API Key",
+            "title": "OpenAI API Key (for analysis)",
             "type": "string",
-            "description": "Required if using ChatGPT. Get from: platform.openai.com/api-keys",
+            "description": "Optional. Used for analyzing responses (not for querying). Provide at least one API key for analysis.",
             "editor": "textfield",
             "isSecret": true
         },
         "anthropicApiKey": {
-            "title": "Anthropic API Key",
+            "title": "Anthropic API Key (for analysis)",
             "type": "string",
-            "description": "Required if using Claude. Get from: console.anthropic.com",
+            "description": "Optional. Used for analyzing responses (not for querying). Provide at least one API key for analysis.",
             "editor": "textfield",
             "isSecret": true
         },
         "googleApiKey": {
-            "title": "Google AI API Key",
+            "title": "Google AI API Key (for analysis)",
             "type": "string",
-            "description": "Required if using Gemini. Get from: aistudio.google.com/apikey",
+            "description": "Recommended. Used for analyzing responses. Get free from: aistudio.google.com/apikey",
             "editor": "textfield",
             "isSecret": true
         },
         "proxyConfiguration": {
             "title": "Proxy Configuration",
             "type": "object",
-            "description": "Proxy settings (optional)",
+            "description": "Proxy settings - recommended to avoid rate limits on AI platforms",
             "editor": "proxy",
             "prefill": {
                 "useApifyProxy": true

@@ -51,38 +51,30 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
         errors.append(InputValidationError(
             message="At least one AI platform must be selected",
             field="platforms",
-            help_text="Select from: ChatGPT, Claude, Gemini"
+            help_text="Select from: ChatGPT, Gemini, Perplexity"
         ))
 
-    # Check API keys for selected platforms
-    platform_key_map = {
-        Platform.CHATGPT: ("openaiApiKey", "OpenAI API key"),
-        Platform.CLAUDE: ("anthropicApiKey", "Anthropic API key"),
-        Platform.GEMINI: ("googleApiKey", "Google AI API key"),
-    }
-
-    for platform in actor_input.platforms:
-        key = actor_input.api_keys.get_key_for_platform(platform)
-        if not key:
-            field_name, key_name = platform_key_map.get(platform, ("", "API key"))
-            errors.append(InputValidationError(
-                message=f"{key_name} is required for {platform.value}",
-                field=field_name,
-                help_text=f"Provide your {key_name} to use {platform.value}"
-            ))
+    # Check that at least one API key is provided for ANALYSIS
+    # (Not for querying platforms - those use browser automation)
+    if not actor_input.analysis_keys.has_any_key():
+        errors.append(InputValidationError(
+            message="At least one API key is required for response analysis",
+            field="googleApiKey",
+            help_text="Provide an OpenAI, Anthropic, or Google API key for analyzing responses. Google's is free: aistudio.google.com/apikey"
+        ))
 
     # Validate prompt count
     if actor_input.prompt_count < 1:
         errors.append(InputValidationError(
             message="Prompt count must be at least 1",
             field="promptCount",
-            help_text="Minimum: 1, Maximum: 15"
+            help_text="Minimum: 1, Maximum: 5"
         ))
-    elif actor_input.prompt_count > 15:
+    elif actor_input.prompt_count > 5:
         errors.append(InputValidationError(
-            message="Prompt count cannot exceed 15",
+            message="Prompt count cannot exceed 5",
             field="promptCount",
-            help_text="Minimum: 1, Maximum: 15"
+            help_text="Minimum: 1, Maximum: 5"
         ))
 
     # Validate competitors count

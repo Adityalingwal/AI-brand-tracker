@@ -4,7 +4,7 @@ from typing import Any
 import json
 import re
 from dataclasses import dataclass
-from ..config import Platform, BrandMention
+from ..config import AnalysisProvider, BrandMention
 
 
 @dataclass
@@ -54,7 +54,7 @@ Return a JSON object with "analyses" array containing analysis for EACH response
 
 IMPORTANT: Return analysis for EACH response separately. Do not skip any response."""
 
-    def __init__(self, api_key: str, provider: Platform, logger: Any):
+    def __init__(self, api_key: str, provider: AnalysisProvider, logger: Any):
         """
         Initialize mention extractor.
 
@@ -119,11 +119,11 @@ Each analysis must have: promptId, mentions array, citations array."""
 
         content = ""
 
-        if self.provider == Platform.GEMINI:
+        if self.provider == AnalysisProvider.GOOGLE:
             content = await self._call_gemini(user_prompt)
-        elif self.provider == Platform.CHATGPT:
+        elif self.provider == AnalysisProvider.OPENAI:
             content = await self._call_openai(user_prompt)
-        elif self.provider == Platform.CLAUDE:
+        elif self.provider == AnalysisProvider.ANTHROPIC:
             content = await self._call_anthropic(user_prompt)
 
         return self._parse_batch_response(content, brands, responses)
