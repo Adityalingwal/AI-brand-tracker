@@ -103,35 +103,21 @@ async def main():
         # ============================================================
         # STEP 2: PROMPT GENERATION
         # ============================================================
-        progress.start_step("PROMPTS", "Generating prompts")
+        progress.start_step("PROMPTS", "Preparing prompts")
 
-        # Get first available API key for prompt generation
-        gen_key, gen_platform = actor_input.api_keys.get_first_available_key()
+        # Use custom prompts if provided, otherwise use template-based prompts
+        if actor_input.custom_prompts:
+            all_prompts = actor_input.custom_prompts[:5]  # Max 5 custom prompts
+            logger.info(f"  Using {len(all_prompts)} custom prompts")
+        else:
+            prompt_generator = PromptGenerator(logger)
+            all_prompts = prompt_generator.generate(
+                actor_input.category,
+                actor_input.prompt_count
+            )
+            logger.info(f"  Using {len(all_prompts)} template prompts")
 
-        if not gen_key or not gen_platform:
-            logger.error("  No API key available for prompt generation")
-            await Actor.push_data({
-                "type": "error",
-                "status": "failed",
-                "message": "No API key available for prompt generation",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            return
-
-        logger.info(f"  Using {gen_platform.value} for prompt generation")
-
-        prompt_generator = PromptGenerator(gen_key, gen_platform, logger)
-        generated_prompts = await prompt_generator.generate(
-            actor_input.category,
-            actor_input.prompt_count
-        )
-
-        # Add custom prompts
-        all_prompts = generated_prompts + actor_input.custom_prompts
-
-        logger.info(f"  Generated: {len(generated_prompts)} prompts")
-        logger.info(f"  Custom: {len(actor_input.custom_prompts)} prompts")
-        logger.info(f"  Total: {len(all_prompts)} prompts")
+        logger.info(f"  Total prompts to analyze: {len(all_prompts)}")
 
         progress.complete_step("PROMPTS", items=len(all_prompts))
 
@@ -264,8 +250,19 @@ async def main():
         # ============================================================
         progress.start_step("ANALYZE", "Analyzing responses for brand mentions and citations")
 
-        # Initialize analyzers (use same key as prompt generation)
-        mention_extractor = MentionExtractor(gen_key, gen_platform, logger)
+        # Initialize analyzers (get first available API key for analysis)
+        analysis_key, analysis_platform = actor_input.api_keys.get_first_available_key()
+        if not analysis_key or not analysis_platform:
+            logger.error("  No API key available for response analysis")
+            await Actor.push_data({
+                "type": "error",
+                "status": "failed",
+                "message": "No API key available for response analysis",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            return
+
+        mention_extractor = MentionExtractor(analysis_key, analysis_platform, logger)
         metrics_calculator = MetricsCalculator()
 
         all_brands = actor_input.all_brands

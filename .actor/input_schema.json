@@ -40,18 +40,18 @@
         "promptCount": {
             "title": "Number of Prompts",
             "type": "integer",
-            "description": "How many prompts to generate and test (1-15). More prompts = more comprehensive analysis but higher cost.",
-            "default": 5,
+            "description": "How many template prompts to use (1-5). Ignored if you provide custom prompts.",
+            "default": 1,
             "minimum": 1,
-            "maximum": 15,
+            "maximum": 5,
             "prefill": 1
         },
         "customPrompts": {
             "title": "Custom Prompts (Optional)",
             "type": "array",
-            "description": "Your own prompts to include in addition to auto-generated ones. Example: 'What is the best CRM for startups?'",
+            "description": "Your own prompts to use instead of templates. When provided, template prompts are skipped. Example: 'What is the best CRM for startups?'",
             "editor": "stringList",
-            "maxItems": 20
+            "maxItems": 5
         },
         "openaiApiKey": {
             "title": "OpenAI API Key",

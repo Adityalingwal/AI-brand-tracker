@@ -1,11 +1,11 @@
 # AI Brand Tracker
 
-This Actor tracks your brand's visibility across AI platforms (ChatGPT, Claude, Gemini). Provide your brand name and industry category — the Actor generates realistic search queries, queries multiple AI platforms simultaneously, and analyzes which brands get mentioned, recommended, and cited. Know exactly where you stand against competitors in AI-powered search results.
+This Actor tracks your brand's visibility across AI platforms (ChatGPT, Claude, Gemini). Provide your brand name and industry category — the Actor uses pre-built prompt templates to query multiple AI platforms simultaneously and analyzes which brands get mentioned, recommended, and cited. Know exactly where you stand against competitors in AI-powered search results.
 
 ## Main Features
 
 - 🤖 **Multi-Platform Analysis** — Queries ChatGPT (GPT-4o), Claude (Sonnet 4), and Gemini (2.5 Flash) simultaneously
-- 🎯 **Smart Prompt Generation** — AI generates diverse, realistic search queries for your category
+- 🎯 **Template-Based Prompts** — 5 pre-built prompt templates covering recommendations, comparisons, pricing, use-cases, and reviews
 - 📊 **Brand Mention Extraction** — Detects mentions with count, rank, context, and recommendation status
 - 🔗 **Citation Discovery** — Identifies URLs cited in AI responses
 - 🏆 **Competitive Leaderboards** — Compare visibility scores and citation share across all brands
@@ -37,9 +37,9 @@ Choose which AI platforms to analyze (you must provide API keys for each):
 }
 ```
 
-**Step 3: The Actor Generates Search Prompts**
+**Step 3: The Actor Uses Template Prompts**
 
-The Actor uses AI to generate diverse, realistic search queries that people might ask when researching your category — covering recommendations, comparisons, features, pricing, and use cases.
+The Actor uses 5 pre-built prompt templates that cover diverse search angles — recommendations, comparisons, pricing, use-cases, and reviews. You can also provide your own custom prompts instead.
 
 **Step 4: All Platforms are Queried in Parallel**
 
@@ -66,18 +66,18 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 
 ## 📥 Input Parameters
 
-| Parameter            | Type    | Required    | Description                                          | Default |
-| -------------------- | ------- | ----------- | ---------------------------------------------------- | ------- |
-| `category`           | String  | ✅ Yes      | Industry/niche to analyze (e.g., "CRM software")     | —       |
-| `yourBrand`          | String  | ✅ Yes      | Your brand name to track                             | —       |
-| `competitors`        | Array   | No          | Competitor brands to compare against (max 10)        | `[]`    |
-| `platforms`          | Array   | ✅ Yes      | AI platforms to query: `chatgpt`, `claude`, `gemini` | —       |
-| `promptCount`        | Integer | No          | Number of prompts to generate (1-15)                 | `5`     |
-| `customPrompts`      | Array   | No          | Your own prompts to include (max 20)                 | `[]`    |
-| `openaiApiKey`       | String  | Conditional | Required if using ChatGPT                            | —       |
-| `anthropicApiKey`    | String  | Conditional | Required if using Claude                             | —       |
-| `googleApiKey`       | String  | Conditional | Required if using Gemini                             | —       |
-| `proxyConfiguration` | Object  | No          | Apify Proxy settings                                 | Enabled |
+| Parameter            | Type    | Required    | Description                                                | Default |
+| -------------------- | ------- | ----------- | ---------------------------------------------------------- | ------- |
+| `category`           | String  | ✅ Yes      | Industry/niche to analyze (e.g., "CRM software")           | —       |
+| `yourBrand`          | String  | ✅ Yes      | Your brand name to track                                   | —       |
+| `competitors`        | Array   | No          | Competitor brands to compare against (max 10)              | `[]`    |
+| `platforms`          | Array   | ✅ Yes      | AI platforms to query: `chatgpt`, `claude`, `gemini`       | —       |
+| `promptCount`        | Integer | No          | Number of template prompts to use (1-5). Ignored if custom | `1`     |
+| `customPrompts`      | Array   | No          | Your own prompts to use instead of templates (max 5)       | `[]`    |
+| `openaiApiKey`       | String  | Conditional | Required if using ChatGPT                                  | —       |
+| `anthropicApiKey`    | String  | Conditional | Required if using Claude                                   | —       |
+| `googleApiKey`       | String  | Conditional | Required if using Gemini                                   | —       |
+| `proxyConfiguration` | Object  | No          | Apify Proxy settings                                       | Enabled |
 
 ### Example: Minimum Required Input
 
@@ -90,7 +90,7 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 }
 ```
 
-### Example: Full Configuration
+### Example: Full Configuration with Templates
 
 ```json
 {
@@ -98,14 +98,28 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
   "yourBrand": "Mailchimp",
   "competitors": ["Klaviyo", "ConvertKit", "Brevo", "ActiveCampaign"],
   "platforms": ["chatgpt", "claude", "gemini"],
-  "promptCount": 10,
-  "customPrompts": [
-    "What's the best email marketing tool for e-commerce?",
-    "Which email platform has the best automation features?"
-  ],
+  "promptCount": 5,
   "openaiApiKey": "sk-...",
   "anthropicApiKey": "sk-ant-...",
   "googleApiKey": "AIza..."
+}
+```
+
+### Example: Custom Prompts Only
+
+```json
+{
+  "category": "Email marketing platforms",
+  "yourBrand": "Mailchimp",
+  "competitors": ["Klaviyo", "ConvertKit"],
+  "platforms": ["chatgpt", "claude"],
+  "customPrompts": [
+    "What's the best email marketing tool for e-commerce?",
+    "Which email platform has the best automation features?",
+    "Compare Mailchimp vs Klaviyo for small businesses"
+  ],
+  "openaiApiKey": "sk-...",
+  "anthropicApiKey": "sk-ant-..."
 }
 ```
 
@@ -368,7 +382,7 @@ Each AI platform has different training data, recommendation logic, and update f
 
 **Q: Can I use custom prompts only?**
 
-Yes! Set `promptCount` to 0 and provide your own prompts in `customPrompts`. This is useful for testing specific scenarios.
+Yes! Simply provide your prompts in `customPrompts` and the template prompts will be skipped. This is useful for testing specific scenarios. Maximum 5 custom prompts allowed.
 
 **Q: How often should I run this?**
 
@@ -380,7 +394,7 @@ For ongoing monitoring, weekly or bi-weekly runs are recommended. AI platform re
 
 | Limitation             | Details                                                      |
 | ---------------------- | ------------------------------------------------------------ |
-| Maximum 15 prompts     | Auto-generated prompts capped at 15 per run                  |
+| Maximum 5 prompts      | Template or custom prompts capped at 5 per run               |
 | Maximum 10 competitors | Up to 10 competitor brands can be tracked simultaneously     |
 | API rate limits        | High prompt counts may trigger rate limiting on AI platforms |
 | API key required       | At least one platform API key must be provided               |
@@ -395,6 +409,15 @@ If you encounter problems or have feature requests, please open an issue on the 
 
 ## 📝 Changelog
 
+### v1.1.0 (2025-01-09)
+
+**Simplified Prompts** 📝
+
+- Replaced LLM-powered prompt generation with 5 pre-built templates (saves cost and improves reliability)
+- Custom prompts now replace templates when provided (instead of adding to them)
+- Reduced maximum prompts from 15 to 5 for focused analysis
+- Changed default prompt count from 5 to 1 for quick testing
+
 ### v1.0.0 (2025-01-08)
 
 **Initial Release** 🚀
@@ -402,7 +425,7 @@ If you encounter problems or have feature requests, please open an issue on the 
 **Core Capabilities:**
 
 - Multi-platform AI querying (ChatGPT, Claude, Gemini)
-- LLM-powered prompt generation
+- Template-based prompt generation
 - Brand mention extraction with count, rank, and context
 - Citation/URL extraction from AI responses
 - Visibility score and citation share calculation
@@ -418,7 +441,7 @@ If you encounter problems or have feature requests, please open an issue on the 
 
 - Comprehensive error tracking and recovery
 - Exponential backoff on API failures
-- Graceful fallback for prompt generation and extraction
+- Graceful fallback for extraction
 - Detailed error summaries in output
 
 **Developer Experience:**

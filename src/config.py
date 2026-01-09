@@ -52,7 +52,7 @@ class ActorInput:
     your_brand: str
     competitors: list[str] = field(default_factory=list)
     platforms: list[Platform] = field(default_factory=list)
-    prompt_count: int = 5
+    prompt_count: int = 1
     custom_prompts: list[str] = field(default_factory=list)
     api_keys: APIKeys = field(default_factory=APIKeys)
     proxy_config: Optional[dict] = None
