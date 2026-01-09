@@ -6,6 +6,7 @@ httpx>=0.27.0
 
 # Browser automation (for scraping AI platforms)
 playwright>=1.40.0
+playwright-stealth>=1.0.0
 
 # AI Platform SDKs (for analysis only - user needs one key)
 openai>=1.0.0

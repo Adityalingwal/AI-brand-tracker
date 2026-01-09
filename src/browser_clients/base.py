@@ -100,8 +100,15 @@ class BaseBrowserClient(ABC):
         for char in text:
             await page.keyboard.type(char, delay=random.randint(min_delay, max_delay))
 
-    async def initialize(self, headless: bool = True):
-        """Initialize browser and navigate to platform."""
+    async def initialize(self, headless: bool = False):
+        """
+        Initialize browser and navigate to platform.
+        
+        Args:
+            headless: Whether to run headless. Default is False because 
+                      ChatGPT blocks headless browsers. Apify Docker has 
+                      Xvfb (virtual display) for headed mode.
+        """
         from playwright.async_api import async_playwright
         
         self.playwright = await async_playwright().start()
@@ -109,6 +116,7 @@ class BaseBrowserClient(ABC):
         # Get proxy if configured
         proxy_url = await self._get_proxy_url()
         
+        # Launch browser with anti-detection args
         browser_args = {
             "headless": headless,
             "args": [
@@ -116,6 +124,8 @@ class BaseBrowserClient(ABC):
                 "--disable-setuid-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-blink-features=AutomationControlled",
+                "--disable-infobars",
+                "--window-size=1920,1080",
             ]
         }
         
@@ -127,12 +137,20 @@ class BaseBrowserClient(ABC):
         }
         
         if proxy_url:
-            # Parse proxy URL for Playwright format
             context_args["proxy"] = {"server": proxy_url}
             self.logger.info(f"  Using Apify proxy for {self.platform_name}")
         
         self.context = await self.browser.new_context(**context_args)
         self.page = await self.context.new_page()
+        
+        # Apply stealth patches to avoid detection
+        try:
+            from playwright_stealth import Stealth
+            stealth = Stealth()
+            await stealth.apply_stealth_async(self.page)
+            self.logger.info(f"  Applied stealth patches")
+        except Exception as e:
+            self.logger.warning(f"  Stealth patches skipped: {e}")
         
         # Navigate to platform
         self.logger.info(f"  Navigating to {self.base_url}...")
