@@ -74,30 +74,38 @@ class BaseBrowserClient(ABC):
         pass
 
     async def _get_proxy_config(self) -> Optional[dict]:
-        """Get proxy configuration for Playwright from Apify proxy."""
-        if not self.proxy_config:
-            return None
+        """
+        Get proxy configuration for Playwright from Apify proxy.
         
-        try:
-            from apify import Actor
-            proxy_configuration = await Actor.create_proxy_configuration(
-                actor_proxy_input=self.proxy_config
-            )
-            if proxy_configuration:
-                proxy_url = await proxy_configuration.new_url()
-                if proxy_url:
-                    from urllib.parse import urlparse
-                    parsed = urlparse(proxy_url)
-                    
-                    return {
-                        "server": f"{parsed.scheme}://{parsed.hostname}:{parsed.port}",
-                        "username": parsed.username,
-                        "password": parsed.password,
-                    }
-        except Exception as e:
-            self.logger.warning(f"  Failed to get proxy: {e}")
-        
+        NOTE: Currently disabled because ChatGPT/Gemini/Perplexity block
+        datacenter proxy IPs. Browser automation works better WITHOUT proxy.
+        If needed in future, use RESIDENTIAL proxies only.
+        """
+        # Disabled - ChatGPT blocks datacenter IPs
+        # Use residential proxies if you need proxy support
         return None
+        
+        # Original code (for reference):
+        # if not self.proxy_config:
+        #     return None
+        # try:
+        #     from apify import Actor
+        #     proxy_configuration = await Actor.create_proxy_configuration(
+        #         actor_proxy_input=self.proxy_config
+        #     )
+        #     if proxy_configuration:
+        #         proxy_url = await proxy_configuration.new_url()
+        #         if proxy_url:
+        #             from urllib.parse import urlparse
+        #             parsed = urlparse(proxy_url)
+        #             return {
+        #                 "server": f"{parsed.scheme}://{parsed.hostname}:{parsed.port}",
+        #                 "username": parsed.username,
+        #                 "password": parsed.password,
+        #             }
+        # except Exception as e:
+        #     self.logger.warning(f"  Failed to get proxy: {e}")
+        # return None
 
     async def _human_delay(self, min_ms: int = 50, max_ms: int = 150):
         """Add human-like delay."""
@@ -163,7 +171,7 @@ class BaseBrowserClient(ABC):
         
         # Navigate to platform
         self.logger.info(f"  Navigating to {self.base_url}...")
-        await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=30000)
+        await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
         
         # Wait a bit for dynamic content
         await asyncio.sleep(3)
