@@ -1,0 +1,40 @@
+{
+  "actorSpecification": 1,
+  "title": "AI Brand Visibility Results",
+  "description": "Contains prompt results, brand summaries, leaderboards, and run summaries",
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "transformation": {
+        "fields": ["type", "brand", "visibilityScore", "citationShare", "totalMentions"]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "type": { "label": "Type" },
+          "brand": { "label": "Brand" },
+          "visibilityScore": { "label": "Visibility %" },
+          "citationShare": { "label": "Citation Share %" },
+          "totalMentions": { "label": "Mentions" }
+        }
+      }
+    },
+    "promptResults": {
+      "title": "Prompt Results",
+      "transformation": {
+        "fields": ["promptId", "platform", "promptText", "yourBrandMentioned", "yourBrandRank", "promptWinner"]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "promptId": { "label": "Prompt ID" },
+          "platform": { "label": "Platform" },
+          "promptText": { "label": "Prompt" },
+          "yourBrandMentioned": { "label": "Your Brand Mentioned" },
+          "yourBrandRank": { "label": "Your Rank" },
+          "promptWinner": { "label": "Winner" }
+        }
+      }
+    }
+  }
+}
