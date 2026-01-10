@@ -54,14 +54,8 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
             help_text="Select from: ChatGPT, Gemini, Perplexity"
         ))
 
-    # Check that at least one API key is provided for ANALYSIS
-    # (Not for querying platforms - those use browser automation)
-    if not actor_input.analysis_keys.has_any_key():
-        errors.append(InputValidationError(
-            message="At least one API key is required for response analysis",
-            field="googleApiKey",
-            help_text="Provide an OpenAI, Anthropic, or Google API key for analyzing responses. Google's is free: aistudio.google.com/apikey"
-        ))
+    # API key for analysis is provided via environment variable
+    # Users don't need to provide any API keys
 
     # Validate prompt count
     if actor_input.prompt_count < 1:

@@ -6,11 +6,12 @@ Uses browser automation - no API keys needed for querying platforms!
 """
 
 import asyncio
+import os
 from datetime import datetime, timezone
 from typing import Optional
 from apify import Actor
 
-from .config import ActorInput, Platform, PromptResult, BrandMention, PLATFORM_MODELS
+from .config import ActorInput, Platform, PromptResult, BrandMention, PLATFORM_MODELS, AnalysisProvider
 from .utils import ProgressTracker, validate_input
 from .error_handling import ErrorTracker
 from .prompt_generator import PromptGenerator
@@ -39,17 +40,123 @@ def create_browser_client(
     return None
 
 
+async def query_platform(
+    platform: Platform,
+    prompts: list[str],
+    logger,
+    proxy_config: Optional[dict],
+    error_tracker: ErrorTracker
+) -> list[dict]:
+    """Query a single platform with all prompts. Runs in parallel with other platforms."""
+    responses = []
+    
+    client = create_browser_client(platform, logger, proxy_config)
+    if not client:
+        logger.warning(f"  {platform.value} not implemented, skipping...")
+        return responses
+    
+    try:
+        logger.info(f"  [{platform.value.upper()}] Initializing browser...")
+        await client.initialize()
+        
+        for i, prompt_text in enumerate(prompts):
+            prompt_id = f"{platform.value}_prompt_{i:03d}"
+            
+            try:
+                result = await client.query_with_retry(prompt_text, max_retries=2)
+                
+                if result.success:
+                    error_tracker.add_success(
+                        f"{platform.value}:{prompt_id}",
+                        {"prompt": prompt_text[:50]}
+                    )
+                    responses.append({
+                        "prompt_id": prompt_id,
+                        "prompt_text": prompt_text,
+                        "platform": platform.value,
+                        "model": result.model,
+                        "response": result.response,
+                        "success": True,
+                    })
+                    logger.info(f"  [{platform.value.upper()}] Query {i+1}/{len(prompts)} ✓")
+                else:
+                    error_tracker.add_error(
+                        "query_failed",
+                        result.error or "Unknown error",
+                        context=f"{platform.value}:{prompt_id}"
+                    )
+                    responses.append({
+                        "prompt_id": prompt_id,
+                        "prompt_text": prompt_text,
+                        "platform": platform.value,
+                        "model": result.model,
+                        "response": "",
+                        "success": False,
+                        "error": result.error,
+                    })
+                    logger.warning(f"  [{platform.value.upper()}] Query {i+1} failed: {result.error}")
+                    
+            except Exception as e:
+                error_tracker.add_error(
+                    "query_exception",
+                    str(e),
+                    context=f"{platform.value}:{prompt_id}"
+                )
+                responses.append({
+                    "prompt_id": prompt_id,
+                    "prompt_text": prompt_text,
+                    "platform": platform.value,
+                    "model": "",
+                    "response": "",
+                    "success": False,
+                    "error": str(e),
+                })
+        
+        logger.info(f"  [{platform.value.upper()}] Completed all queries")
+        
+    except Exception as e:
+        logger.error(f"  [{platform.value.upper()}] Failed: {e}")
+        error_tracker.add_error("platform_init_failed", str(e), context=platform.value)
+    finally:
+        await client.close()
+    
+    return responses
+
+
+def get_analysis_api_key() -> tuple[Optional[str], Optional[AnalysisProvider]]:
+    """Get analysis API key from environment variables."""
+    # Priority: Google (free) > OpenAI > Anthropic
+    google_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+    if google_key:
+        return google_key, AnalysisProvider.GOOGLE
+    
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if openai_key:
+        return openai_key, AnalysisProvider.OPENAI
+    
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    if anthropic_key:
+        return anthropic_key, AnalysisProvider.ANTHROPIC
+    
+    return None, None
+
+
 async def main():
+    """Main entry point for the AI Brand Tracker actor."""
 
     async with Actor:
         logger = Actor.log
         progress = ProgressTracker(logger)
         error_tracker = ErrorTracker()
         started_at = datetime.now(timezone.utc)
-        browser_clients: list[BaseBrowserClient] = []
 
-        logger.info("AI Brand Tracker")
-        
+        logger.info("")
+        logger.info("=" * 60)
+        logger.info("  AI Brand Tracker v2 (Browser Mode)")
+        logger.info("=" * 60)
+        logger.info("  Track brand visibility across AI platforms")
+        logger.info("  No API keys needed for querying!")
+        logger.info("=" * 60)
 
         try:
             # ============================================================
@@ -113,101 +220,36 @@ async def main():
             progress.complete_step("PROMPTS", items=len(all_prompts))
 
             # ============================================================
-            # STEP 3: QUERY AI PLATFORMS (Browser Automation)
+            # STEP 3: QUERY AI PLATFORMS (PARALLEL EXECUTION)
             # ============================================================
-            progress.start_step("QUERY", f"Querying {len(actor_input.platforms)} AI platforms via browser")
+            progress.start_step("QUERY", f"Querying {len(actor_input.platforms)} AI platforms in PARALLEL")
 
-            all_responses: list[dict] = []
+            logger.info(f"  Starting parallel queries on: {[p.value for p in actor_input.platforms]}")
 
-            # Process each platform sequentially (each needs its own browser)
-            for platform in actor_input.platforms:
-                logger.info(f"")
-                logger.info(f"  === {platform.value.upper()} ===")
-                
-                client = create_browser_client(
-                    platform, 
-                    logger, 
-                    actor_input.proxy_config
+            # Run all platforms in parallel
+            tasks = [
+                query_platform(
+                    platform,
+                    all_prompts,
+                    logger,
+                    actor_input.proxy_config,
+                    error_tracker
                 )
-                
-                if not client:
-                    logger.warning(f"  {platform.value} not yet implemented, skipping...")
-                    continue
-                
-                browser_clients.append(client)
-                
-                try:
-                    # Initialize browser and navigate to platform
-                    logger.info(f"  Initializing browser for {platform.value}...")
-                    await client.initialize()
-                    
-                    # Query each prompt
-                    for i, prompt_text in enumerate(all_prompts):
-                        prompt_id = f"{platform.value}_prompt_{i:03d}"
-                        
-                        try:
-                            result = await client.query_with_retry(prompt_text, max_retries=2)
-                            
-                            if result.success:
-                                error_tracker.add_success(
-                                    f"{platform.value}:{prompt_id}",
-                                    {"prompt": prompt_text[:50]}
-                                )
-                                all_responses.append({
-                                    "prompt_id": prompt_id,
-                                    "prompt_text": prompt_text,
-                                    "platform": platform.value,
-                                    "model": result.model,
-                                    "response": result.response,
-                                    "success": True,
-                                })
-                            else:
-                                error_tracker.add_error(
-                                    "query_failed",
-                                    result.error or "Unknown error",
-                                    context=f"{platform.value}:{prompt_id}"
-                                )
-                                all_responses.append({
-                                    "prompt_id": prompt_id,
-                                    "prompt_text": prompt_text,
-                                    "platform": platform.value,
-                                    "model": result.model,
-                                    "response": "",
-                                    "success": False,
-                                    "error": result.error,
-                                })
-                                
-                        except Exception as e:
-                            error_tracker.add_error(
-                                "query_exception",
-                                str(e),
-                                context=f"{platform.value}:{prompt_id}"
-                            )
-                            all_responses.append({
-                                "prompt_id": prompt_id,
-                                "prompt_text": prompt_text,
-                                "platform": platform.value,
-                                "model": "",
-                                "response": "",
-                                "success": False,
-                                "error": str(e),
-                            })
-                    
-                    logger.info(f"  Completed {platform.value}")
-                    
-                except Exception as e:
-                    logger.error(f"  Failed to initialize {platform.value}: {e}")
-                    error_tracker.add_error(
-                        "platform_init_failed",
-                        str(e),
-                        context=platform.value
-                    )
-                finally:
-                    # Close browser for this platform
-                    await client.close()
+                for platform in actor_input.platforms
+            ]
+            
+            platform_results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Flatten results
+            all_responses: list[dict] = []
+            for result in platform_results:
+                if isinstance(result, Exception):
+                    logger.error(f"  Platform error: {result}")
+                elif isinstance(result, list):
+                    all_responses.extend(result)
 
             logger.info(f"")
-            logger.info(f"  Collected {len(all_responses)} responses")
+            logger.info(f"  Collected {len(all_responses)} responses from all platforms")
 
             progress.complete_step(
                 "QUERY",
@@ -216,20 +258,20 @@ async def main():
             )
 
             # ============================================================
-            # STEP 4: ANALYZE RESPONSES (Using API for LLM analysis)
+            # STEP 4: ANALYZE RESPONSES (Using our API key from ENV)
             # ============================================================
             progress.start_step("ANALYZE", "Analyzing responses for brand mentions and citations")
 
-            # Get API key for analysis
-            analysis_key, analysis_provider = actor_input.analysis_keys.get_first_available()
+            # Get API key from environment
+            analysis_key, analysis_provider = get_analysis_api_key()
             
             if not analysis_key or not analysis_provider:
-                logger.error("  No API key available for response analysis")
-                logger.error("  Please provide at least one API key (OpenAI, Anthropic, or Google)")
+                logger.error("  No analysis API key configured in environment")
+                logger.error("  Please set GOOGLE_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY")
                 await Actor.push_data({
                     "type": "error",
                     "status": "failed",
-                    "message": "No API key available for response analysis. Please provide at least one API key.",
+                    "message": "No analysis API key configured. Contact actor developer.",
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 })
                 return
@@ -431,13 +473,10 @@ async def main():
 
             logger.info("=" * 60)
             
-        finally:
-            # Ensure all browsers are closed
-            for client in browser_clients:
-                try:
-                    await client.close()
-                except Exception:
-                    pass
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 if __name__ == "__main__":

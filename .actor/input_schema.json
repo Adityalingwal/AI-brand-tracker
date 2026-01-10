@@ -28,7 +28,7 @@
         "platforms": {
             "title": "AI Platforms",
             "type": "array",
-            "description": "Select which AI platforms to query (no API keys needed for these - we use browser automation)",
+            "description": "Select which AI platforms to query (no API keys needed!)",
             "editor": "select",
             "items": {
                 "type": "string",
@@ -53,27 +53,6 @@
             "description": "Your own prompts to use instead of templates. When provided, template prompts are skipped. Example: 'What is the best CRM for startups?'",
             "editor": "stringList",
             "maxItems": 5
-        },
-        "openaiApiKey": {
-            "title": "OpenAI API Key (for analysis)",
-            "type": "string",
-            "description": "Optional. Used for analyzing responses (not for querying). Provide at least one API key for analysis.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "anthropicApiKey": {
-            "title": "Anthropic API Key (for analysis)",
-            "type": "string",
-            "description": "Optional. Used for analyzing responses (not for querying). Provide at least one API key for analysis.",
-            "editor": "textfield",
-            "isSecret": true
-        },
-        "googleApiKey": {
-            "title": "Google AI API Key (for analysis)",
-            "type": "string",
-            "description": "Recommended. Used for analyzing responses. Get free from: aistudio.google.com/apikey",
-            "editor": "textfield",
-            "isSecret": true
         },
         "proxyConfiguration": {
             "title": "Proxy Configuration",
