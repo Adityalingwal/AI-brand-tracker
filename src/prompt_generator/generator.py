@@ -15,25 +15,9 @@ class PromptGenerator:
     ]
 
     def __init__(self, logger: Any):
-        """
-        Initialize prompt generator.
-
-        Args:
-            logger: Logger instance
-        """
         self.logger = logger
 
     def generate(self, category: str, count: int) -> list[str]:
-        """
-        Generate prompts for the given category using templates.
-
-        Args:
-            category: Industry/niche to generate prompts for
-            count: Number of prompts to generate (1-5)
-
-        Returns:
-            List of generated prompts
-        """
         count = min(count, len(self.TEMPLATES))
         count = max(count, 1)
 

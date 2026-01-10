@@ -14,7 +14,7 @@ from .config import ActorInput, Platform, PromptResult, BrandMention, PLATFORM_M
 from .utils import ProgressTracker, validate_input
 from .error_handling import ErrorTracker
 from .prompt_generator import PromptGenerator
-from .browser_clients import BaseBrowserClient, ChatGPTBrowserClient
+from .browser_clients import BaseBrowserClient, ChatGPTBrowserClient, PerplexityBrowserClient
 from .analyzer import MentionExtractor, MetricsCalculator
 from .output import (
     format_prompt_result,
@@ -32,11 +32,11 @@ def create_browser_client(
     """Create a browser client for the given platform."""
     if platform == Platform.CHATGPT:
         return ChatGPTBrowserClient(logger, proxy_config)
-    # TODO: Add Gemini and Perplexity clients
+    elif platform == Platform.PERPLEXITY:
+        return PerplexityBrowserClient(logger, proxy_config)
+    # TODO: Add Gemini client
     # elif platform == Platform.GEMINI:
     #     return GeminiBrowserClient(logger, proxy_config)
-    # elif platform == Platform.PERPLEXITY:
-    #     return PerplexityBrowserClient(logger, proxy_config)
     return None
 
 
