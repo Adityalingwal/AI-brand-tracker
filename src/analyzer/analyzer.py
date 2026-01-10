@@ -1,40 +1,31 @@
-"""Consolidated analyzer that generates complete output structure in one LLM call."""
+"""Brand visibility analyzer using Claude Haiku 4.5."""
 
 import json
 from typing import Optional
-from ..config import AnalysisProvider
 
 
-class ConsolidatedAnalyzer:
-    """Analyzes all platform responses and generates complete output structure."""
+class BrandAnalyzer:
+    """Analyzes AI platform responses to track brand visibility and mentions."""
 
-    def __init__(self, api_key: str, provider: AnalysisProvider, logger):
+    def __init__(self, api_key: str, logger):
         """
-        Initialize the consolidated analyzer.
+        Initialize the consolidated analyzer with Claude Haiku 4.5.
 
         Args:
-            api_key: API key for LLM provider
-            provider: LLM provider (openai, anthropic, google)
+            api_key: Anthropic API key
             logger: Logger instance
         """
         self.api_key = api_key
-        self.provider = provider
         self.logger = logger
-        self.client = None
 
-        # Initialize provider client
-        if provider == AnalysisProvider.OPENAI:
-            from openai import AsyncOpenAI
-            self.client = AsyncOpenAI(api_key=api_key)
-            self.model = "gpt-4o-mini"
-        elif provider == AnalysisProvider.ANTHROPIC:
-            from anthropic import AsyncAnthropic
-            self.client = AsyncAnthropic(api_key=api_key)
-            self.model = "claude-3-5-sonnet-20241022"
-        elif provider == AnalysisProvider.GOOGLE:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            self.model = "gemini-2.0-flash-exp"
+        # Initialize Anthropic client
+        from anthropic import AsyncAnthropic
+        self.client = AsyncAnthropic(api_key=api_key)
+        self.model = "claude-haiku-4-5-20251001"
+
+        # Extended thinking configuration
+        self.use_extended_thinking = True
+        self.thinking_budget_tokens = 3000  # Optimal for brand analysis
 
     def _build_analysis_prompt(
         self,
@@ -197,59 +188,52 @@ Generate the analysis now:"""
         try:
             prompt = self._build_analysis_prompt(my_brand, competitors, platform_responses)
 
-            self.logger.info(f"[Analyzer] Analyzing {len(platform_responses)} responses with {self.provider.value}...")
+            self.logger.info(f"[Analyzer] Analyzing {len(platform_responses)} responses with Claude Haiku 4.5...")
 
-            if self.provider == AnalysisProvider.OPENAI:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "You are a brand visibility analyst. Analyze AI responses and return structured JSON data."
-                        },
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ],
-                    temperature=0.1,
-                    response_format={"type": "json_object"}
-                )
-                result_text = response.choices[0].message.content
-
-            elif self.provider == AnalysisProvider.ANTHROPIC:
-                response = await self.client.messages.create(
-                    model=self.model,
-                    max_tokens=8000,
-                    temperature=0.1,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ]
-                )
-                result_text = response.content[0].text
-
-            elif self.provider == AnalysisProvider.GOOGLE:
-                import google.generativeai as genai
-                model = genai.GenerativeModel(
-                    self.model,
-                    generation_config={
-                        "temperature": 0.1,
-                        "response_mime_type": "application/json"
+            # Prepare API call parameters
+            api_params = {
+                "model": self.model,
+                "max_tokens": 12000,  # Sufficient for comprehensive analysis
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
                     }
-                )
-                response = await model.generate_content_async(prompt)
-                result_text = response.text
+                ]
+            }
 
-            else:
-                self.logger.error(f"Unsupported provider: {self.provider}")
-                return None
+            # Add extended thinking if enabled
+            if self.use_extended_thinking:
+                api_params["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": self.thinking_budget_tokens
+                }
+                self.logger.info(f"[Analyzer] Extended thinking enabled (budget: {self.thinking_budget_tokens} tokens)")
 
-            # Parse JSON
+            # Make API call with Claude Haiku 4.5
+            response = await self.client.messages.create(**api_params)
+
+            # Extract text from response (skip thinking blocks if present)
+            result_text = ""
+            for block in response.content:
+                if block.type == "thinking":
+                    self.logger.info(f"[Analyzer] Thinking: {block.thinking[:100]}...")
+                elif block.type == "text":
+                    result_text += block.text
+
+            # Parse JSON (strip markdown code blocks if present)
             try:
-                output = json.loads(result_text)
+                # Remove markdown code blocks
+                clean_text = result_text.strip()
+                if clean_text.startswith("```json"):
+                    clean_text = clean_text[7:]  # Remove ```json
+                if clean_text.startswith("```"):
+                    clean_text = clean_text[3:]  # Remove ```
+                if clean_text.endswith("```"):
+                    clean_text = clean_text[:-3]  # Remove trailing ```
+                clean_text = clean_text.strip()
+
+                output = json.loads(clean_text)
 
                 # Add category to summary (from input, more reliable than LLM inference)
                 if "summary" in output:

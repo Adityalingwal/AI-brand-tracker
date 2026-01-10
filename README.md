@@ -255,37 +255,15 @@ All platforms are queried in parallel, so querying 3 platforms takes about the s
 
 ## 📝 Changelog
 
-### v2.1.0 (2025-01-10)
-
-**Simplified Output Structure** 📊
-
-- **Single consolidated output** instead of 14+ separate records
-- **Plain English summaries** instead of technical metrics (visibilityScore, citationShare)
-- **Platform-focused analysis** with per-platform brand performance
-- **Single LLM call** for analysis (reduced from 10+ calls)
-- **Cleaner dataset** - one JSON object per run
-
-### v2.0.0 (2025-01-10)
-
-**Browser Automation** 🌐
-
-- Replaced API-based querying with browser automation (Playwright)
-- No API keys needed from users!
-- Parallel platform execution (ChatGPT, Gemini, Perplexity queried simultaneously)
-- Replaced Claude with Perplexity (Claude requires login)
-- Added stealth patches to avoid bot detection
-
-### v1.1.0 (2025-01-09)
-
-**Simplified Prompts** 📝
-
-- Replaced LLM-powered prompt generation with 5 pre-built templates
-- Reduced maximum prompts from 15 to 5
-
-### v1.0.0 (2025-01-08)
+### v1.0.0 (2025-01-10)
 
 **Initial Release** 🚀
 
-- Multi-platform AI querying
-- Brand mention extraction
-- Visibility scores and leaderboards
+- **Browser automation** - No API keys needed from users (Playwright-based)
+- **Multi-platform support** - ChatGPT, Gemini, and Perplexity queried in parallel
+- **Claude Haiku 4.5 analysis** - Fast, accurate AI-powered brand mention detection with extended thinking
+- **Single consolidated output** - Clean JSON structure with platform-wise performance
+- **Plain English summaries** - User-friendly summaries instead of technical metrics
+- **5 pre-built prompt templates** - Industry-tested questions for brand visibility
+- **Pay-per-event pricing** - $0.02 per prompt analyzed
+- **Stealth browser mode** - Avoids bot detection on AI platforms

@@ -6,11 +6,18 @@ from datetime import datetime, timezone
 from typing import Optional
 from apify import Actor
 
-from .config import ActorInput, Platform, PromptResult, BrandMention, AnalysisProvider
+# Load .env file for local development (Apify uses environment variables directly)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not available, use system environment variables
+
+from .config import ActorInput, Platform
 from .utils import validate_input
 from .error_handling import ErrorTracker
 from .browser_clients import ChatGPTBrowserClient, PerplexityBrowserClient, GeminiBrowserClient
-from .analyzer import ConsolidatedAnalyzer
+from .analyzer import BrandAnalyzer
 
 
 def create_browser_client(platform: Platform, logger):
@@ -82,21 +89,9 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
     return responses
 
 
-def get_analysis_api_key() -> tuple[Optional[str], Optional[AnalysisProvider]]:
-    """Get analysis API key from environment."""
-    google_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
-    if google_key:
-        return google_key, AnalysisProvider.GOOGLE
-    
-    openai_key = os.environ.get("OPENAI_API_KEY")
-    if openai_key:
-        return openai_key, AnalysisProvider.OPENAI
-    
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
-    if anthropic_key:
-        return anthropic_key, AnalysisProvider.ANTHROPIC
-    
-    return None, None
+def get_analysis_api_key() -> Optional[str]:
+    """Get Anthropic API key from environment."""
+    return os.environ.get("ANTHROPIC_API_KEY")
 
 
 async def main():
@@ -163,17 +158,17 @@ async def main():
                 return
 
             # Analyze all responses with consolidated analyzer (SINGLE API CALL)
-            analysis_key, analysis_provider = get_analysis_api_key()
+            analysis_key = get_analysis_api_key()
 
             if not analysis_key:
-                logger.error("No analysis API key configured")
+                logger.error("ANTHROPIC_API_KEY not configured")
                 await Actor.push_data({
                     "type": "error",
-                    "message": "Analysis API key not configured",
+                    "message": "ANTHROPIC_API_KEY environment variable not set",
                 })
                 return
 
-            consolidated_analyzer = ConsolidatedAnalyzer(analysis_key, analysis_provider, logger)
+            analyzer = BrandAnalyzer(analysis_key, logger)
 
             # Prepare responses for analysis
             platform_responses = [
@@ -186,7 +181,7 @@ async def main():
             ]
 
             # Single LLM call to analyze everything
-            output = await consolidated_analyzer.analyze_all_responses(
+            output = await analyzer.analyze_all_responses(
                 my_brand=actor_input.my_brand,
                 competitors=actor_input.competitors,
                 category=actor_input.category,
