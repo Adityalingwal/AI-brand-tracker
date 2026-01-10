@@ -119,45 +119,75 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 
 ## 📤 Output Format
 
-Results are stored in the Apify Dataset. You can download as JSON, CSV, or Excel.
+Results are stored in the Apify Dataset as a **single consolidated JSON object**. You can download as JSON, CSV, or Excel.
 
-### 1. `prompt_result` (One per prompt × platform)
+### Output Structure
+
+The output contains everything in one clean, organized structure:
 
 ```json
 {
-  "type": "prompt_result",
-  "promptId": "chatgpt_prompt_001",
-  "promptText": "What are the best CRM tools for startups?",
-  "platform": "chatgpt",
-  "platformModel": "gpt-4o-mini (free)",
-  "rawResponse": "For startups looking for CRM solutions...",
-  "mentions": [
+  "summary": {
+    "category": "CRM software",
+    "myBrand": "Salesforce",
+    "competitors": ["HubSpot", "Pipedrive"]
+  },
+
+  "myBrandPerformance": {
+    "brand": "Salesforce",
+    "platformPerformance": {
+      "chatgpt": {
+        "summary": "Mentioned 5 times across 2 out of 3 prompts. Ranked #2 on this platform (HubSpot ranked #1).",
+        "promptsMentionSummary": "Mentioned in Prompt #1 and Prompt #3. Missing from Prompt #2."
+      },
+      "gemini": {
+        "summary": "Mentioned 7 times across 3 out of 3 prompts. Ranked #1 on this platform.",
+        "promptsMentionSummary": "Mentioned in all prompts."
+      }
+    }
+  },
+
+  "competitorBrandPerformance": {
+    "HubSpot": {
+      "platformPerformance": {
+        "chatgpt": {
+          "summary": "Mentioned 8 times across 3 out of 3 prompts. Ranked #1 on this platform.",
+          "promptsMentionSummary": "Mentioned in all prompts."
+        }
+      }
+    }
+  },
+
+  "promptResults": [
     {
-      "brand": "HubSpot",
-      "count": 3,
-      "rank": 1,
-      "context": "HubSpot offers a generous free tier...",
-      "isRecommended": true
+      "platform": "chatgpt",
+      "prompts": [
+        {
+          "promptText": "What are the best CRM tools?",
+          "response": "The top CRM tools include Salesforce, HubSpot...",
+          "allBrandsMentioned": ["Salesforce", "HubSpot", "Zoho"]
+        }
+      ]
     }
   ],
-  "citations": ["https://www.g2.com/categories/crm"],
-  "promptWinner": "HubSpot",
-  "myBrandMentioned": true,
-  "myBrandRank": 2
+
+  "executionMetadata": {
+    "startedAt": "2025-01-10T12:00:00Z",
+    "completedAt": "2025-01-10T12:05:30Z",
+    "durationMs": 330000,
+    "totalResponses": 9,
+    "platformsQueried": ["chatgpt", "gemini", "perplexity"]
+  }
 }
 ```
 
-### 2. `brand_summary` (One per brand)
+### Key Features
 
-Aggregated metrics for each tracked brand.
-
-### 3. `leaderboard` (One per run)
-
-Overall rankings across all brands.
-
-### 4. `run_summary` (One per run)
-
-Run metadata and execution details.
+- **Single Output**: One consolidated record per run (no more 14+ scattered records)
+- **Plain English Summaries**: No complex metrics like "visibilityScore: 75.5%" — just clear summaries
+- **Platform-Focused**: See how each brand performs on each AI platform
+- **Actionable Insights**: Know exactly which prompts missed your brand
+- **Complete Transparency**: Full AI responses included for verification
 
 ---
 
@@ -224,6 +254,16 @@ All platforms are queried in parallel, so querying 3 platforms takes about the s
 ---
 
 ## 📝 Changelog
+
+### v2.1.0 (2025-01-10)
+
+**Simplified Output Structure** 📊
+
+- **Single consolidated output** instead of 14+ separate records
+- **Plain English summaries** instead of technical metrics (visibilityScore, citationShare)
+- **Platform-focused analysis** with per-platform brand performance
+- **Single LLM call** for analysis (reduced from 10+ calls)
+- **Cleaner dataset** - one JSON object per run
 
 ### v2.0.0 (2025-01-10)
 

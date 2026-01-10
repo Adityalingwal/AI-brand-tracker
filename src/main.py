@@ -10,8 +10,7 @@ from .config import ActorInput, Platform, PromptResult, BrandMention, AnalysisPr
 from .utils import validate_input
 from .error_handling import ErrorTracker
 from .browser_clients import ChatGPTBrowserClient, PerplexityBrowserClient, GeminiBrowserClient
-from .analyzer import MentionExtractor, MetricsCalculator
-from .output import format_prompt_result, format_brand_summary, format_leaderboard, format_run_summary
+from .analyzer import ConsolidatedAnalyzer
 
 
 def create_browser_client(platform: Platform, logger):
@@ -152,9 +151,20 @@ async def main():
 
             logger.info(f"Collected {len(all_responses)} responses")
 
-            # Analyze responses
+            # Get valid responses only
+            valid_responses = [r for r in all_responses if r["success"] and r["response"]]
+
+            if not valid_responses:
+                logger.error("No valid responses to analyze")
+                await Actor.push_data({
+                    "type": "error",
+                    "message": "No valid responses collected from platforms",
+                })
+                return
+
+            # Analyze all responses with consolidated analyzer (SINGLE API CALL)
             analysis_key, analysis_provider = get_analysis_api_key()
-            
+
             if not analysis_key:
                 logger.error("No analysis API key configured")
                 await Actor.push_data({
@@ -163,126 +173,64 @@ async def main():
                 })
                 return
 
-            mention_extractor = MentionExtractor(analysis_key, analysis_provider, logger)
-            metrics_calculator = MetricsCalculator()
+            consolidated_analyzer = ConsolidatedAnalyzer(analysis_key, analysis_provider, logger)
 
-            all_brands = actor_input.all_brands
-            prompt_results = []
-            
-            valid_responses = [r for r in all_responses if r["success"] and r["response"]]
-            
-            if valid_responses:
-                logger.info(f"Analyzing {len(valid_responses)} responses...")
-                
-                try:
-                    extraction_results = await mention_extractor.extract_batch(valid_responses, all_brands)
-                    extraction_map = {r.prompt_id: r for r in extraction_results}
-                    
-                    for resp in valid_responses:
-                        extraction = extraction_map.get(resp["prompt_id"])
-                        mentions = extraction.mentions if extraction else []
-                        citations = extraction.citations if extraction else []
+            # Prepare responses for analysis
+            platform_responses = [
+                {
+                    "platform": resp["platform"],
+                    "prompt_text": resp["prompt_text"],
+                    "response": resp["response"],
+                }
+                for resp in valid_responses
+            ]
 
-                        my_brand_mention = next(
-                            (m for m in mentions if m.brand.lower() == actor_input.my_brand.lower()),
-                            None
-                        )
-
-                        result = PromptResult(
-                            prompt_id=resp["prompt_id"],
-                            prompt_text=resp["prompt_text"],
-                            platform=resp["platform"],
-                            platform_model="",  # Not exposing model info
-                            raw_response=resp["response"],
-                            mentions=mentions,
-                            citations=citations,
-                            prompt_winner=metrics_calculator.determine_winner(mentions),
-                            prompt_loser=metrics_calculator.determine_loser(mentions),
-                            my_brand_mentioned=my_brand_mention is not None,
-                            my_brand_rank=my_brand_mention.rank if my_brand_mention else None,
-                            competitors_mentioned=[
-                                m.brand for m in mentions
-                                if m.brand.lower() in [c.lower() for c in actor_input.competitors]
-                            ],
-                            competitors_missed=[
-                                c for c in actor_input.competitors
-                                if c.lower() not in [m.brand.lower() for m in mentions]
-                            ],
-                        )
-                        prompt_results.append(result)
-                        
-                        await Actor.push_data(format_prompt_result(
-                            prompt_id=result.prompt_id,
-                            prompt_text=result.prompt_text,
-                            platform=result.platform,
-                            platform_model="",
-                            raw_response=result.raw_response,
-                            mentions=result.mentions,
-                            citations=result.citations,
-                            my_brand=actor_input.my_brand,
-                            competitors=actor_input.competitors,
-                        ))
-                        
-                except Exception as e:
-                    logger.error(f"Analysis error: {e}")
-
-            # Calculate metrics
-            brand_metrics_list = []
-            for brand in all_brands:
-                metrics = metrics_calculator.calculate_brand_metrics(brand, prompt_results, all_brands)
-                brand_metrics_list.append(metrics)
-
-            rankings = metrics_calculator.build_leaderboard(brand_metrics_list)
-            platform_leaderboards = metrics_calculator.build_platform_leaderboards(
-                brand_metrics_list, [p.value for p in actor_input.platforms]
-            )
-
-            for metrics in brand_metrics_list:
-                rank_entry = next((r for r in rankings if r["brand"] == metrics.brand), None)
-                summary = format_brand_summary(metrics)
-                summary["competitivePosition"]["rank"] = rank_entry["rank"] if rank_entry else 0
-                summary["competitivePosition"]["totalBrands"] = len(all_brands)
-                await Actor.push_data(summary)
-
-            await Actor.push_data(format_leaderboard(rankings, platform_leaderboards))
-
-            # Finalize
-            completed_at = datetime.now(timezone.utc)
-            
-            await Actor.push_data(format_run_summary(
-                status="completed",
-                category=actor_input.category,
+            # Single LLM call to analyze everything
+            output = await consolidated_analyzer.analyze_all_responses(
                 my_brand=actor_input.my_brand,
                 competitors=actor_input.competitors,
-                platforms=[p.value for p in actor_input.platforms],
-                prompt_count=len(actor_input.prompts),
-                started_at=started_at,
-                completed_at=completed_at,
-                prompts_processed=len(all_prompts),
-                responses_collected=len(all_responses),
-                events_charged=len(prompt_results),
-            ))
+                category=actor_input.category,
+                platform_responses=platform_responses,
+            )
 
-            # Charge for events
-            if len(prompt_results) > 0:
+            if not output:
+                logger.error("Analysis failed to generate output")
+                await Actor.push_data({
+                    "type": "error",
+                    "message": "Analysis failed",
+                })
+                return
+
+            # Add execution metadata
+            completed_at = datetime.now(timezone.utc)
+            duration_ms = int((completed_at - started_at).total_seconds() * 1000)
+
+            output["executionMetadata"] = {
+                "startedAt": started_at.isoformat(),
+                "completedAt": completed_at.isoformat(),
+                "durationMs": duration_ms,
+                "totalResponses": len(valid_responses),
+                "platformsQueried": [p.value for p in actor_input.platforms],
+            }
+
+            # Push single consolidated output
+            await Actor.push_data(output)
+
+            # Charge for events (per prompt analyzed)
+            events_charged = len(valid_responses)
+            if events_charged > 0:
                 try:
-                    await Actor.charge(event_name="prompt-analyzed", count=len(prompt_results))
+                    await Actor.charge(event_name="prompt-analyzed", count=events_charged)
                 except Exception:
                     pass
 
             # Log summary
-            my_brand_metrics = next(
-                (m for m in brand_metrics_list if m.brand == actor_input.my_brand), None
-            )
-            
             logger.info("=" * 40)
             logger.info("RESULTS")
             logger.info("=" * 40)
             logger.info(f"Brand: {actor_input.my_brand}")
-            if my_brand_metrics:
-                logger.info(f"Visibility: {my_brand_metrics.visibility_score}%")
-                logger.info(f"Mentions: {my_brand_metrics.total_mentions}")
-            logger.info(f"Analyzed: {len(prompt_results)}")
+            logger.info(f"Analyzed: {events_charged} responses")
+            logger.info(f"Duration: {duration_ms/1000:.1f}s")
             logger.info("=" * 40)
             
         except Exception as e:
