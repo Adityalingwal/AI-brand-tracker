@@ -23,9 +23,9 @@ class BrandAnalyzer:
         self.client = AsyncAnthropic(api_key=api_key)
         self.model = "claude-haiku-4-5-20251001"
 
-        # Extended thinking configuration
-        self.use_extended_thinking = True
-        self.thinking_budget_tokens = 3000  # Optimal for brand analysis
+        # Extended thinking disabled for faster response
+        self.use_extended_thinking = False
+        self.thinking_budget_tokens = 3000
 
     def _build_analysis_prompt(
         self,
@@ -188,12 +188,12 @@ Generate the analysis now:"""
         try:
             prompt = self._build_analysis_prompt(my_brand, competitors, platform_responses)
 
-            self.logger.info(f"[Analyzer] Analyzing {len(platform_responses)} responses with Claude Haiku 4.5...")
+            self.logger.info(f"[Analyzer] Analyzing {len(platform_responses)} responses...")
 
             # Prepare API call parameters
             api_params = {
                 "model": self.model,
-                "max_tokens": 12000,  # Sufficient for comprehensive analysis
+                "max_tokens": 12000,
                 "messages": [
                     {
                         "role": "user",
@@ -208,34 +208,33 @@ Generate the analysis now:"""
                     "type": "enabled",
                     "budget_tokens": self.thinking_budget_tokens
                 }
-                self.logger.info(f"[Analyzer] Extended thinking enabled (budget: {self.thinking_budget_tokens} tokens)")
+                self.logger.info(f"[Analyzer] Extended thinking enabled")
 
-            # Make API call with Claude Haiku 4.5
+            # Make API call
             response = await self.client.messages.create(**api_params)
 
-            # Extract text from response (skip thinking blocks if present)
+            # Extract text from response
             result_text = ""
             for block in response.content:
                 if block.type == "thinking":
-                    self.logger.info(f"[Analyzer] Thinking: {block.thinking[:100]}...")
+                    self.logger.info(f"[Analyzer] Thinking...")
                 elif block.type == "text":
                     result_text += block.text
 
-            # Parse JSON (strip markdown code blocks if present)
+            # Parse JSON
             try:
-                # Remove markdown code blocks
                 clean_text = result_text.strip()
                 if clean_text.startswith("```json"):
-                    clean_text = clean_text[7:]  # Remove ```json
+                    clean_text = clean_text[7:]
                 if clean_text.startswith("```"):
-                    clean_text = clean_text[3:]  # Remove ```
+                    clean_text = clean_text[3:]
                 if clean_text.endswith("```"):
-                    clean_text = clean_text[:-3]  # Remove trailing ```
+                    clean_text = clean_text[:-3]
                 clean_text = clean_text.strip()
 
                 output = json.loads(clean_text)
 
-                # Add category to summary (from input, more reliable than LLM inference)
+                # Add category to summary
                 if "summary" in output:
                     output["summary"]["category"] = category
 
