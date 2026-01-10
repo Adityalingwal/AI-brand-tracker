@@ -40,24 +40,16 @@ def create_browser_client(
 
 
 async def main():
-    """Main entry point for the AI Brand Tracker actor."""
 
     async with Actor:
         logger = Actor.log
         progress = ProgressTracker(logger)
         error_tracker = ErrorTracker()
         started_at = datetime.now(timezone.utc)
-        
-        # Track browser clients for cleanup
         browser_clients: list[BaseBrowserClient] = []
 
-        logger.info("")
-        logger.info("=" * 60)
-        logger.info("  AI Brand Tracker v2 (Browser Mode)")
-        logger.info("=" * 60)
-        logger.info("  Track brand visibility across AI platforms")
-        logger.info("  No API keys needed for querying - uses browser automation!")
-        logger.info("=" * 60)
+        logger.info("AI Brand Tracker")
+        
 
         try:
             # ============================================================
