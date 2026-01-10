@@ -2,7 +2,6 @@
 
 from typing import Any
 
-
 class PromptGenerator:
     """Generate prompts for brand visibility analysis using pre-built templates."""
 
