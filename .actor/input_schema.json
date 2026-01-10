@@ -6,12 +6,12 @@
         "category": {
             "title": "Industry Category",
             "type": "string",
-            "description": "The industry or niche to analyze (e.g., 'CRM software', 'project management tools', 'email marketing platforms')",
+            "description": "The industry or niche to analyze (e.g., 'CRM software', 'project management tools')",
             "editor": "textfield",
             "prefill": "CRM software"
         },
-        "yourBrand": {
-            "title": "Your Brand",
+        "myBrand": {
+            "title": "My Brand",
             "type": "string",
             "description": "Your brand name to track visibility for",
             "editor": "textfield",
@@ -20,7 +20,7 @@
         "competitors": {
             "title": "Competitor Brands (Optional)",
             "type": "array",
-            "description": "Competitor brands to compare against. Leave empty to track only your brand.",
+            "description": "Competitor brands to compare against",
             "editor": "stringList",
             "prefill": [],
             "maxItems": 10
@@ -28,12 +28,12 @@
         "platforms": {
             "title": "AI Platforms",
             "type": "array",
-            "description": "Select which AI platforms to query (no API keys needed!)",
+            "description": "Select which AI platforms to query",
             "editor": "select",
             "items": {
                 "type": "string",
                 "enum": ["chatgpt", "gemini", "perplexity"],
-                "enumTitles": ["ChatGPT (OpenAI)", "Gemini (Google)", "Perplexity AI"]
+                "enumTitles": ["ChatGPT", "Gemini", "Perplexity"]
             },
             "prefill": ["chatgpt"],
             "minItems": 1
@@ -41,7 +41,7 @@
         "promptCount": {
             "title": "Number of Prompts",
             "type": "integer",
-            "description": "How many template prompts to use (1-5). Ignored if you provide custom prompts.",
+            "description": "How many prompts to use (1-5)",
             "default": 1,
             "minimum": 1,
             "maximum": 5,
@@ -50,19 +50,10 @@
         "customPrompts": {
             "title": "Custom Prompts (Optional)",
             "type": "array",
-            "description": "Your own prompts to use instead of templates. When provided, template prompts are skipped. Example: 'What is the best CRM for startups?'",
+            "description": "Your own prompts instead of templates",
             "editor": "stringList",
             "maxItems": 5
-        },
-        "proxyConfiguration": {
-            "title": "Proxy Configuration",
-            "type": "object",
-            "description": "Proxy settings - recommended to avoid rate limits on AI platforms",
-            "editor": "proxy",
-            "prefill": {
-                "useApifyProxy": true
-            }
         }
     },
-    "required": ["category", "yourBrand", "platforms"]
+    "required": ["category", "myBrand", "platforms"]
 }

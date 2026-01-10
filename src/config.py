@@ -53,18 +53,16 @@ class AnalysisAPIKeys:
 class ActorInput:
     """Parsed actor input."""
     category: str
-    your_brand: str
+    my_brand: str
     competitors: list[str] = field(default_factory=list)
     platforms: list[Platform] = field(default_factory=list)
     prompt_count: int = 1
     custom_prompts: list[str] = field(default_factory=list)
-    analysis_keys: AnalysisAPIKeys = field(default_factory=AnalysisAPIKeys)
-    proxy_config: Optional[dict] = None
 
     @property
     def all_brands(self) -> list[str]:
-        """Get all brands to track (your brand + competitors)."""
-        return [self.your_brand] + self.competitors
+        """Get all brands to track (my brand + competitors)."""
+        return [self.my_brand] + self.competitors
 
     @classmethod
     def from_raw_input(cls, raw: dict) -> "ActorInput":
@@ -74,23 +72,15 @@ class ActorInput:
             try:
                 platforms.append(Platform(p.lower()))
             except ValueError:
-                pass  # Skip invalid platforms (e.g., old 'claude' value)
-
-        analysis_keys = AnalysisAPIKeys(
-            openai=raw.get("openaiApiKey", "").strip() or None,
-            anthropic=raw.get("anthropicApiKey", "").strip() or None,
-            google=raw.get("googleApiKey", "").strip() or None,
-        )
+                pass
 
         return cls(
             category=raw.get("category", "").strip(),
-            your_brand=raw.get("yourBrand", "").strip(),
+            my_brand=raw.get("myBrand", "").strip(),
             competitors=[c.strip() for c in raw.get("competitors", []) if c.strip()],
             platforms=platforms,
-            prompt_count=raw.get("promptCount", 5),
+            prompt_count=raw.get("promptCount", 1),
             custom_prompts=[p.strip() for p in raw.get("customPrompts", []) if p.strip()],
-            analysis_keys=analysis_keys,
-            proxy_config=raw.get("proxyConfiguration"),
         )
 
 
@@ -128,8 +118,8 @@ class PromptResult:
     citations: list[str]
     prompt_winner: Optional[str]
     prompt_loser: Optional[str]
-    your_brand_mentioned: bool
-    your_brand_rank: Optional[int]
+    my_brand_mentioned: bool
+    my_brand_rank: Optional[int]
     competitors_mentioned: list[str]
     competitors_missed: list[str]
 
@@ -155,8 +145,8 @@ class PromptResult:
             "citations": self.citations,
             "promptWinner": self.prompt_winner,
             "promptLoser": self.prompt_loser,
-            "yourBrandMentioned": self.your_brand_mentioned,
-            "yourBrandRank": self.your_brand_rank,
+            "myBrandMentioned": self.my_brand_mentioned,
+            "myBrandRank": self.my_brand_rank,
             "competitorsMentioned": self.competitors_mentioned,
             "competitorsMissed": self.competitors_missed,
         }

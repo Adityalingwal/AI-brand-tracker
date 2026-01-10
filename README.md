@@ -29,7 +29,7 @@ Enter your brand name, industry category, and optionally competitors to compare 
 ```json
 {
   "category": "CRM software",
-  "yourBrand": "Salesforce",
+  "myBrand": "Salesforce",
   "competitors": ["HubSpot", "Pipedrive", "Zoho"]
 }
 ```
@@ -70,7 +70,7 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 | Parameter            | Type    | Required | Description                                      | Default |
 | -------------------- | ------- | -------- | ------------------------------------------------ | ------- |
 | `category`           | String  | ✅ Yes   | Industry/niche to analyze (e.g., "CRM software") | —       |
-| `yourBrand`          | String  | ✅ Yes   | Your brand name to track                         | —       |
+| `myBrand`          | String  | ✅ Yes   | Your brand name to track                         | —       |
 | `competitors`        | Array   | No       | Competitor brands to compare against (max 10)    | `[]`    |
 | `platforms`          | Array   | ✅ Yes   | AI platforms: `chatgpt`, `gemini`, `perplexity`  | —       |
 | `promptCount`        | Integer | No       | Number of template prompts to use (1-5)          | `1`     |
@@ -82,7 +82,7 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 ```json
 {
   "category": "CRM software",
-  "yourBrand": "Salesforce",
+  "myBrand": "Salesforce",
   "platforms": ["chatgpt"]
 }
 ```
@@ -92,7 +92,7 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 ```json
 {
   "category": "Email marketing platforms",
-  "yourBrand": "Mailchimp",
+  "myBrand": "Mailchimp",
   "competitors": ["Klaviyo", "ConvertKit", "Brevo"],
   "platforms": ["chatgpt", "gemini", "perplexity"],
   "promptCount": 5
@@ -104,7 +104,7 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 ```json
 {
   "category": "Email marketing platforms",
-  "yourBrand": "Mailchimp",
+  "myBrand": "Mailchimp",
   "competitors": ["Klaviyo", "ConvertKit"],
   "platforms": ["chatgpt", "perplexity"],
   "customPrompts": [
@@ -142,8 +142,8 @@ Results are stored in the Apify Dataset. You can download as JSON, CSV, or Excel
   ],
   "citations": ["https://www.g2.com/categories/crm"],
   "promptWinner": "HubSpot",
-  "yourBrandMentioned": true,
-  "yourBrandRank": 2
+  "myBrandMentioned": true,
+  "myBrandRank": 2
 }
 ```
 

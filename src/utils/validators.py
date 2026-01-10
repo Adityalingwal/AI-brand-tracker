@@ -40,10 +40,10 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
             help_text="Example: 'CRM software', 'project management tools'"
         ))
 
-    if not actor_input.your_brand:
+    if not actor_input.my_brand:
         errors.append(InputValidationError(
-            message="Your brand name is required",
-            field="yourBrand",
+            message="Brand name is required",
+            field="myBrand",
             help_text="Example: 'Salesforce', 'HubSpot'"
         ))
 

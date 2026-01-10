@@ -14,7 +14,7 @@ def format_prompt_result(
     raw_response: str,
     mentions: list[BrandMention],
     citations: list[str],
-    your_brand: str,
+    my_brand: str,
     competitors: list[str],
 ) -> dict:
     """
@@ -28,7 +28,7 @@ def format_prompt_result(
         raw_response: Raw response from platform
         mentions: Extracted brand mentions
         citations: Extracted URLs
-        your_brand: User's brand
+        my_brand: User's brand
         competitors: Competitor brands
 
     Returns:
@@ -49,12 +49,12 @@ def format_prompt_result(
             prompt_loser = sorted_by_count[0].brand
 
     # Check if your brand is mentioned
-    your_brand_mention = next(
-        (m for m in mentions if m.brand.lower() == your_brand.lower()),
+    my_brand_mention = next(
+        (m for m in mentions if m.brand.lower() == my_brand.lower()),
         None
     )
-    your_brand_mentioned = your_brand_mention is not None
-    your_brand_rank = your_brand_mention.rank if your_brand_mention else None
+    my_brand_mentioned = my_brand_mention is not None
+    my_brand_rank = my_brand_mention.rank if my_brand_mention else None
 
     # Determine which competitors were mentioned/missed
     mentioned_brands = {m.brand.lower() for m in mentions}
@@ -81,8 +81,8 @@ def format_prompt_result(
         "citations": citations,
         "promptWinner": prompt_winner,
         "promptLoser": prompt_loser,
-        "yourBrandMentioned": your_brand_mentioned,
-        "yourBrandRank": your_brand_rank,
+        "myBrandMentioned": my_brand_mentioned,
+        "myBrandRank": my_brand_rank,
         "competitorsMentioned": competitors_mentioned,
         "competitorsMissed": competitors_missed,
     }
@@ -145,7 +145,7 @@ def format_leaderboard(
 def format_run_summary(
     status: str,
     category: str,
-    your_brand: str,
+    my_brand: str,
     competitors: list[str],
     platforms: list[str],
     prompt_count: int,
@@ -162,7 +162,7 @@ def format_run_summary(
     Args:
         status: Run status (completed, failed, etc.)
         category: Industry category
-        your_brand: User's brand
+        my_brand: User's brand
         competitors: Competitor brands
         platforms: Platforms used
         prompt_count: Number of prompts requested
@@ -183,7 +183,7 @@ def format_run_summary(
         "status": status,
         "input": {
             "category": category,
-            "yourBrand": your_brand,
+            "myBrand": my_brand,
             "competitors": competitors,
             "platforms": platforms,
             "promptCount": prompt_count,
