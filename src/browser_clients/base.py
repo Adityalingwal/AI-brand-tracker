@@ -73,8 +73,8 @@ class BaseBrowserClient(ABC):
         """Base URL of the platform."""
         pass
 
-    async def _get_proxy_url(self) -> Optional[str]:
-        """Get proxy URL from Apify proxy configuration."""
+    async def _get_proxy_config(self) -> Optional[dict]:
+        """Get proxy configuration for Playwright from Apify proxy."""
         if not self.proxy_config:
             return None
         
@@ -84,9 +84,18 @@ class BaseBrowserClient(ABC):
                 actor_proxy_input=self.proxy_config
             )
             if proxy_configuration:
-                return await proxy_configuration.new_url()
+                proxy_url = await proxy_configuration.new_url()
+                if proxy_url:
+                    from urllib.parse import urlparse
+                    parsed = urlparse(proxy_url)
+                    
+                    return {
+                        "server": f"{parsed.scheme}://{parsed.hostname}:{parsed.port}",
+                        "username": parsed.username,
+                        "password": parsed.password,
+                    }
         except Exception as e:
-            self.logger.warning(f"  Failed to get proxy URL: {e}")
+            self.logger.warning(f"  Failed to get proxy: {e}")
         
         return None
 
@@ -114,7 +123,7 @@ class BaseBrowserClient(ABC):
         self.playwright = await async_playwright().start()
         
         # Get proxy if configured
-        proxy_url = await self._get_proxy_url()
+        proxy_config = await self._get_proxy_config()
         
         # Launch browser with anti-detection args
         browser_args = {
@@ -136,8 +145,8 @@ class BaseBrowserClient(ABC):
             "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         }
         
-        if proxy_url:
-            context_args["proxy"] = {"server": proxy_url}
+        if proxy_config:
+            context_args["proxy"] = proxy_config
             self.logger.info(f"  Using Apify proxy for {self.platform_name}")
         
         self.context = await self.browser.new_context(**context_args)
