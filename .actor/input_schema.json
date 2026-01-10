@@ -6,29 +6,29 @@
         "category": {
             "title": "Industry Category",
             "type": "string",
-            "description": "The industry or niche to analyze (e.g., 'CRM software', 'project management tools')",
+            "description": "The industry or niche to analyze",
             "editor": "textfield",
             "prefill": "CRM software"
         },
         "myBrand": {
             "title": "My Brand",
             "type": "string",
-            "description": "Your brand name to track visibility for",
+            "description": "Your brand name to track",
             "editor": "textfield",
             "prefill": "Salesforce"
         },
         "competitors": {
-            "title": "Competitor Brands (Optional)",
+            "title": "Competitors (Optional)",
             "type": "array",
-            "description": "Competitor brands to compare against",
+            "description": "Competitor brands to compare (max 5)",
             "editor": "stringList",
             "prefill": [],
-            "maxItems": 10
+            "maxItems": 5
         },
         "platforms": {
             "title": "AI Platforms",
             "type": "array",
-            "description": "Select which AI platforms to query",
+            "description": "Which AI platforms to query",
             "editor": "select",
             "items": {
                 "type": "string",
@@ -38,22 +38,15 @@
             "prefill": ["chatgpt"],
             "minItems": 1
         },
-        "promptCount": {
-            "title": "Number of Prompts",
-            "type": "integer",
-            "description": "How many prompts to use (1-5)",
-            "default": 1,
-            "minimum": 1,
-            "maximum": 5,
-            "prefill": 1
-        },
-        "customPrompts": {
-            "title": "Custom Prompts (Optional)",
+        "prompts": {
+            "title": "Prompts",
             "type": "array",
-            "description": "Your own prompts instead of templates",
+            "description": "Questions to ask AI platforms (1-3 prompts)",
             "editor": "stringList",
-            "maxItems": 5
+            "prefill": ["What are the best options available?"],
+            "minItems": 1,
+            "maxItems": 3
         }
     },
-    "required": ["category", "myBrand", "platforms"]
+    "required": ["category", "myBrand", "platforms", "prompts"]
 }

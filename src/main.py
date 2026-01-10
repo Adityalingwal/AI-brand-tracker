@@ -9,7 +9,6 @@ from apify import Actor
 from .config import ActorInput, Platform, PromptResult, BrandMention, AnalysisProvider
 from .utils import validate_input
 from .error_handling import ErrorTracker
-from .prompt_generator import PromptGenerator
 from .browser_clients import ChatGPTBrowserClient, PerplexityBrowserClient, GeminiBrowserClient
 from .analyzer import MentionExtractor, MetricsCalculator
 from .output import format_prompt_result, format_brand_summary, format_leaderboard, format_run_summary
@@ -38,7 +37,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
         await client.initialize()
         
         for i, prompt_text in enumerate(prompts):
-            prompt_id = f"{platform.value}_prompt_{i:03d}"
+            prompt_id = f"{platform.value}_{i:03d}"
             
             try:
                 result = await client.query_with_retry(prompt_text, max_retries=2)
@@ -49,7 +48,6 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                         "prompt_id": prompt_id,
                         "prompt_text": prompt_text,
                         "platform": platform.value,
-                        "model": result.model,
                         "response": result.response,
                         "success": True,
                     })
@@ -60,7 +58,6 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                         "prompt_id": prompt_id,
                         "prompt_text": prompt_text,
                         "platform": platform.value,
-                        "model": result.model,
                         "response": "",
                         "success": False,
                         "error": result.error,
@@ -72,7 +69,6 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                     "prompt_id": prompt_id,
                     "prompt_text": prompt_text,
                     "platform": platform.value,
-                    "model": "",
                     "response": "",
                     "success": False,
                     "error": str(e),
@@ -134,15 +130,10 @@ async def main():
             logger.info(f"Category: {actor_input.category}")
             logger.info(f"Brand: {actor_input.my_brand}")
             logger.info(f"Platforms: {[p.value for p in actor_input.platforms]}")
+            logger.info(f"Prompts: {len(actor_input.prompts)}")
 
-            # Generate prompts
-            if actor_input.custom_prompts:
-                all_prompts = actor_input.custom_prompts[:5]
-            else:
-                prompt_generator = PromptGenerator(logger)
-                all_prompts = prompt_generator.generate(actor_input.category, actor_input.prompt_count)
-
-            logger.info(f"Prompts: {len(all_prompts)}")
+            # Use prompts from input
+            all_prompts = actor_input.prompts
 
             # Query all platforms in parallel
             logger.info(f"Querying {len(actor_input.platforms)} platform(s)...")
@@ -168,7 +159,7 @@ async def main():
                 logger.error("No analysis API key configured")
                 await Actor.push_data({
                     "type": "error",
-                    "message": "Analysis API key not configured. Set GOOGLE_API_KEY environment variable.",
+                    "message": "Analysis API key not configured",
                 })
                 return
 
@@ -201,7 +192,7 @@ async def main():
                             prompt_id=resp["prompt_id"],
                             prompt_text=resp["prompt_text"],
                             platform=resp["platform"],
-                            platform_model=resp["model"],
+                            platform_model="",  # Not exposing model info
                             raw_response=resp["response"],
                             mentions=mentions,
                             citations=citations,
@@ -224,7 +215,7 @@ async def main():
                             prompt_id=result.prompt_id,
                             prompt_text=result.prompt_text,
                             platform=result.platform,
-                            platform_model=result.platform_model,
+                            platform_model="",
                             raw_response=result.raw_response,
                             mentions=result.mentions,
                             citations=result.citations,
@@ -264,7 +255,7 @@ async def main():
                 my_brand=actor_input.my_brand,
                 competitors=actor_input.competitors,
                 platforms=[p.value for p in actor_input.platforms],
-                prompt_count=actor_input.prompt_count,
+                prompt_count=len(actor_input.prompts),
                 started_at=started_at,
                 completed_at=completed_at,
                 prompts_processed=len(all_prompts),
@@ -284,15 +275,15 @@ async def main():
                 (m for m in brand_metrics_list if m.brand == actor_input.my_brand), None
             )
             
-            logger.info("=" * 50)
+            logger.info("=" * 40)
             logger.info("RESULTS")
-            logger.info("=" * 50)
+            logger.info("=" * 40)
             logger.info(f"Brand: {actor_input.my_brand}")
             if my_brand_metrics:
                 logger.info(f"Visibility: {my_brand_metrics.visibility_score}%")
                 logger.info(f"Mentions: {my_brand_metrics.total_mentions}")
-            logger.info(f"Prompts analyzed: {len(prompt_results)}")
-            logger.info("=" * 50)
+            logger.info(f"Analyzed: {len(prompt_results)}")
+            logger.info("=" * 40)
             
         except Exception as e:
             logger.error(f"Error: {e}")

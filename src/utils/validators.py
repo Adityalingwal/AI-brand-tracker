@@ -1,7 +1,7 @@
 """Input validation utilities."""
 
 from typing import Optional
-from ..config import ActorInput, Platform
+from ..config import ActorInput
 
 
 class InputValidationError(Exception):
@@ -14,69 +14,50 @@ class InputValidationError(Exception):
         super().__init__(message)
 
     def to_dict(self) -> dict:
-        """Convert to output dictionary."""
         return {
             "type": "validation_error",
-            "status": "validation_error",
             "error": self.message,
             "field": self.field,
-            "help": self.help_text,
         }
 
 
 def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
-    """
-    Validate actor input and return list of errors.
-
-    Returns empty list if input is valid.
-    """
+    """Validate actor input and return list of errors."""
     errors = []
 
-    # Check required fields
     if not actor_input.category:
         errors.append(InputValidationError(
             message="Category is required",
             field="category",
-            help_text="Example: 'CRM software', 'project management tools'"
         ))
 
     if not actor_input.my_brand:
         errors.append(InputValidationError(
             message="Brand name is required",
             field="myBrand",
-            help_text="Example: 'Salesforce', 'HubSpot'"
         ))
 
     if not actor_input.platforms:
         errors.append(InputValidationError(
-            message="At least one AI platform must be selected",
+            message="At least one platform is required",
             field="platforms",
-            help_text="Select from: ChatGPT, Gemini, Perplexity"
         ))
 
-    # API key for analysis is provided via environment variable
-    # Users don't need to provide any API keys
-
-    # Validate prompt count
-    if actor_input.prompt_count < 1:
+    if not actor_input.prompts:
         errors.append(InputValidationError(
-            message="Prompt count must be at least 1",
-            field="promptCount",
-            help_text="Minimum: 1, Maximum: 5"
+            message="At least one prompt is required",
+            field="prompts",
         ))
-    elif actor_input.prompt_count > 5:
+    elif len(actor_input.prompts) > 3:
         errors.append(InputValidationError(
-            message="Prompt count cannot exceed 5",
-            field="promptCount",
-            help_text="Minimum: 1, Maximum: 5"
+            message="Maximum 3 prompts allowed",
+            field="prompts",
         ))
 
-    # Validate competitors count
-    if len(actor_input.competitors) > 10:
+    if len(actor_input.competitors) > 5:
         errors.append(InputValidationError(
-            message="Maximum 10 competitors allowed",
+            message="Maximum 5 competitors allowed",
             field="competitors",
-            help_text="Reduce the number of competitor brands"
         ))
 
     return errors

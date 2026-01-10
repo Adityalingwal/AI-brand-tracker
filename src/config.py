@@ -56,8 +56,7 @@ class ActorInput:
     my_brand: str
     competitors: list[str] = field(default_factory=list)
     platforms: list[Platform] = field(default_factory=list)
-    prompt_count: int = 1
-    custom_prompts: list[str] = field(default_factory=list)
+    prompts: list[str] = field(default_factory=list)
 
     @property
     def all_brands(self) -> list[str]:
@@ -77,10 +76,9 @@ class ActorInput:
         return cls(
             category=raw.get("category", "").strip(),
             my_brand=raw.get("myBrand", "").strip(),
-            competitors=[c.strip() for c in raw.get("competitors", []) if c.strip()],
+            competitors=[c.strip() for c in raw.get("competitors", []) if c.strip()][:5],
             platforms=platforms,
-            prompt_count=raw.get("promptCount", 1),
-            custom_prompts=[p.strip() for p in raw.get("customPrompts", []) if p.strip()],
+            prompts=[p.strip() for p in raw.get("prompts", []) if p.strip()][:3],
         )
 
 
