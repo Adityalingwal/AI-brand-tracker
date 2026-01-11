@@ -70,7 +70,7 @@ The final output includes detailed prompt-by-prompt results, brand summaries, co
 | Parameter            | Type    | Required | Description                                      | Default |
 | -------------------- | ------- | -------- | ------------------------------------------------ | ------- |
 | `category`           | String  | ✅ Yes   | Industry/niche to analyze (e.g., "CRM software") | —       |
-| `myBrand`          | String  | ✅ Yes   | Your brand name to track                         | —       |
+| `myBrand`            | String  | ✅ Yes   | Your brand name to track                         | —       |
 | `competitors`        | Array   | No       | Competitor brands to compare against (max 10)    | `[]`    |
 | `platforms`          | Array   | ✅ Yes   | AI platforms: `chatgpt`, `gemini`, `perplexity`  | —       |
 | `promptCount`        | Integer | No       | Number of template prompts to use (1-5)          | `1`     |
@@ -215,11 +215,33 @@ The output contains everything in one clean, organized structure:
 
 ## 💰 Pricing
 
-This Actor uses **Pay-Per-Event** pricing.
+This Actor uses **Pay-Per-Event** pricing with a simple flat fee.
 
-| Event             | Price |
-| ----------------- | ----- |
-| `prompt-analyzed` | $0.02 |
+| Event            | Price | Description                                        |
+| ---------------- | ----- | -------------------------------------------------- |
+| `brand-analysis` | $0.20 | One complete analysis across all platforms/prompts |
+
+**What you get for $0.20:**
+
+- Query up to **3 AI platforms** (ChatGPT, Gemini, Perplexity)
+- Analyze up to **3 prompts** per run
+- Get brand mention extraction, competitive analysis, and platform breakdowns
+- All results consolidated into one clean output
+
+### 💎 Tier Discounts
+
+Apify subscription members get discounts:
+
+| Your Apify Plan | Price per Analysis |
+| --------------- | ------------------ |
+| Free / Starter  | $0.20              |
+| Bronze          | $0.18 (10% off)    |
+| Silver          | $0.15 (25% off)    |
+| Gold            | $0.12 (40% off)    |
+
+### 🆓 Free Plan Users
+
+New Apify users get **$5 in free credits** — enough for **25 complete brand analyses** to try the Actor!
 
 ---
 
@@ -265,5 +287,5 @@ All platforms are queried in parallel, so querying 3 platforms takes about the s
 - **Single consolidated output** - Clean JSON structure with platform-wise performance
 - **Plain English summaries** - User-friendly summaries instead of technical metrics
 - **5 pre-built prompt templates** - Industry-tested questions for brand visibility
-- **Pay-per-event pricing** - $0.02 per prompt analyzed
+- **Pay-per-event pricing** - $0.20 per complete brand analysis
 - **Stealth browser mode** - Avoids bot detection on AI platforms

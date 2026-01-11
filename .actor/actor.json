@@ -17,15 +17,16 @@
     "pricingType": "PAY_PER_EVENT",
     "events": [
       {
-        "eventName": "prompt-analyzed",
-        "displayName": "Prompt Analyzed",
+        "eventName": "brand-analysis",
+        "displayName": "Brand Analysis",
         "pricePerEvent": 0.20,
         "pricePerEventByTier": {
           "FREE": 0.20,
           "BRONZE": 0.18,
           "SILVER": 0.15,
           "GOLD": 0.12
-        }
+        },
+        "description": "Complete brand visibility analysis across all platforms"
       }
     ]
   }

@@ -200,19 +200,18 @@ async def main():
             }
 
             await Actor.push_data(output)
-
-            events_charged = len(valid_responses)
-            if events_charged > 0:
-                try:
-                    await Actor.charge(event_name="prompt-analyzed", count=events_charged)
-                except Exception:
-                    pass
+            try:
+                charge_result = await Actor.charge(event_name="brand-analysis", count=1)
+                if charge_result.event_charge_limit_reached:
+                    logger.warning("User spending limit reached")
+            except Exception:
+                pass
 
             logger.info("=" * 40)
             logger.info("RESULTS")
             logger.info("=" * 40)
             logger.info(f"Brand: {actor_input.my_brand}")
-            logger.info(f"Analyzed: {events_charged} responses")
+            logger.info(f"Analyzed: {len(valid_responses)} responses")
             logger.info(f"Duration: {duration_ms/1000:.1f}s")
             logger.info("=" * 40)
             
