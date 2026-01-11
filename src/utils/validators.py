@@ -1,5 +1,6 @@
 """Input validation utilities."""
 
+import re
 from typing import Optional
 from ..config import ActorInput
 
@@ -21,6 +22,18 @@ class InputValidationError(Exception):
         }
 
 
+def _validate_no_injection_patterns(value: str) -> bool:
+    """
+    Check for actual prompt injection patterns, not just keywords.
+    Relaxed to avoid false positives.
+    """
+    dangerous_patterns = [
+        r'<script[\s>]',
+        r'javascript:\s*[a-z_]\w*\s*\(',
+        r'data:text/html\s*,',
+    ]
+    return not any(re.search(pattern, value, re.IGNORECASE | re.DOTALL) for pattern in dangerous_patterns)
+
 def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
     """Validate actor input and return list of errors."""
     errors = []
@@ -30,12 +43,24 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
             message="Category is required",
             field="category",
         ))
+    else:
+        if not _validate_no_injection_patterns(actor_input.category):
+            errors.append(InputValidationError(
+                message="Category contains potentially dangerous content",
+                field="category",
+            ))
 
     if not actor_input.my_brand:
         errors.append(InputValidationError(
             message="Brand name is required",
             field="myBrand",
         ))
+    else:
+        if not _validate_no_injection_patterns(actor_input.my_brand):
+            errors.append(InputValidationError(
+                message="Brand name contains potentially dangerous content",
+                field="myBrand",
+            ))
 
     if not actor_input.platforms:
         errors.append(InputValidationError(
@@ -53,11 +78,25 @@ def validate_input(actor_input: ActorInput) -> list[InputValidationError]:
             message="Maximum 3 prompts allowed",
             field="prompts",
         ))
+    else:
+        for i, prompt in enumerate(actor_input.prompts):
+            if not _validate_no_injection_patterns(prompt):
+                errors.append(InputValidationError(
+                    message=f"Prompt {i+1} contains potentially dangerous content",
+                    field="prompts",
+                ))
 
     if len(actor_input.competitors) > 5:
         errors.append(InputValidationError(
             message="Maximum 5 competitors allowed",
             field="competitors",
         ))
+    else:
+        for i, competitor in enumerate(actor_input.competitors):
+            if not _validate_no_injection_patterns(competitor):
+                errors.append(InputValidationError(
+                    message=f"Competitor {i+1} contains potentially dangerous content",
+                    field="competitors",
+                ))
 
     return errors

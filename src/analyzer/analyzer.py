@@ -1,4 +1,4 @@
-"""Brand visibility analyzer using Claude Haiku 4.5."""
+"""Brand visibility analyzer."""
 
 import json
 from typing import Optional
@@ -8,21 +8,12 @@ class BrandAnalyzer:
     """Analyzes AI platform responses to track brand visibility and mentions."""
 
     def __init__(self, api_key: str, logger):
-        """
-        Initialize the consolidated analyzer with Claude Haiku 4.5.
-
-        Args:
-            api_key: Anthropic API key
-            logger: Logger instance
-        """
         self.api_key = api_key
         self.logger = logger
 
         from anthropic import AsyncAnthropic
         self.client = AsyncAnthropic(api_key=api_key)
         self.model = "claude-haiku-4-5-20251001"
-        self.use_extended_thinking = True
-        self.thinking_budget_tokens = 3000
 
     def _build_analysis_prompt(
         self,
@@ -30,17 +21,6 @@ class BrandAnalyzer:
         competitors: list[str],
         platform_responses: list[dict]
     ) -> str:
-        """
-        Build the comprehensive analysis prompt.
-
-        Args:
-            my_brand: User's brand name
-            competitors: List of competitor brand names
-            platform_responses: List of dicts with platform, prompt_text, response
-
-        Returns:
-            Formatted prompt string
-        """
         platform_data = {}
         for resp in platform_responses:
             platform = resp["platform"]
@@ -51,23 +31,28 @@ class BrandAnalyzer:
                 "answer": resp["response"]
             })
 
+        _divisor = len(platform_data) if platform_data else 1
+        _prompts_per_platform = len(platform_responses) // _divisor
+
         prompt = f"""You are analyzing AI platform responses to track brand mentions and visibility.
 
 INPUT DATA:
-- My Brand: "{my_brand}"
-- Competitors: {json.dumps(competitors)}
+- My Brand: "{my_brand[:500]}"
+- Competitors: {json.dumps([c[:500] for c in competitors], ensure_ascii=False)}
 - Total Platforms: {len(platform_data)}
-- Total Prompts per Platform: {len(platform_responses) // len(platform_data) if platform_data else 0}
+- Total Prompts per Platform: {_prompts_per_platform}
 
 PLATFORM RESPONSES:
 """
 
         for platform, prompts in platform_data.items():
-            prompt += f"\n=== Platform: {platform} ===\n"
+            prompt += f"\n=== Platform: {str(platform)[:100]} ===\n"
             for i, p in enumerate(prompts, 1):
+                question = str(p.get('question', ''))[:2000]
+                answer = str(p.get('answer', ''))[:50000]
                 prompt += f"\nPrompt #{i}:\n"
-                prompt += f"Q: {p['question']}\n"
-                prompt += f"A: {p['answer']}\n"
+                prompt += f"Q: {question}\n"
+                prompt += f"A: {answer}\n"
 
         prompt += """
 
@@ -197,20 +182,19 @@ Generate the analysis now:"""
                 ]
             }
 
-            if self.use_extended_thinking:
-                api_params["thinking"] = {
-                    "type": "enabled",
-                    "budget_tokens": self.thinking_budget_tokens
-                }
-                self.logger.info(f"[Analyzer] Extended thinking enabled")
-
-            response = await self.client.messages.create(**api_params)
+            import asyncio
+            try:
+                response = await asyncio.wait_for(
+                    self.client.messages.create(**api_params),
+                    timeout=300.0
+                )
+            except asyncio.TimeoutError:
+                self.logger.error("[Analyzer] API call timed out after 300 seconds")
+                return None
 
             result_text = ""
             for block in response.content:
-                if block.type == "thinking":
-                    self.logger.info(f"[Analyzer] Thinking...")
-                elif block.type == "text":
+                if block.type == "text":
                     result_text += block.text
 
             try:

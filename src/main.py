@@ -5,20 +5,14 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 from apify import Actor
-
-# Load .env file for local development (Apify uses environment variables directly)
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass  # dotenv not available, use system environment variables
-
+from dotenv import load_dotenv
 from .config import ActorInput, Platform
-from .utils import validate_input
+from .utils import validate_input, sanitize_error_message
 from .error_handling import ErrorTracker
 from .browser_clients import ChatGPTBrowserClient, PerplexityBrowserClient, GeminiBrowserClient
 from .analyzer import BrandAnalyzer
 
+load_dotenv()
 
 def create_browser_client(platform: Platform, logger):
     """Create a browser client for the given platform."""
@@ -70,21 +64,26 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                     })
                     
             except Exception as e:
-                error_tracker.add_error("query_exception", str(e), context=prompt_id)
+                _error_msg = sanitize_error_message(e)
+                error_tracker.add_error("query_exception", _error_msg, context=prompt_id)
                 responses.append({
                     "prompt_id": prompt_id,
-                    "prompt_text": prompt_text,
+                    "prompt_text": prompt_text[:200],
                     "platform": platform.value,
                     "response": "",
                     "success": False,
-                    "error": str(e),
+                    "error": _error_msg,
                 })
         
     except Exception as e:
-        logger.error(f"[{platform.value}] Failed: {e}")
-        error_tracker.add_error("platform_failed", str(e), context=platform.value)
+        _error_msg = sanitize_error_message(e)
+        logger.error(f"[{platform.value}] Failed: {_error_msg}")
+        error_tracker.add_error("platform_failed", _error_msg, context=platform.value)
     finally:
-        await client.close()
+        try:
+            await client.close()
+        except Exception as e:
+            logger.debug(f"Browser cleanup error: {e}")
     
     return responses
 
@@ -133,16 +132,26 @@ async def main():
                 for platform in actor_input.platforms
             ]
             
-            platform_results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+            try:
+                platform_results = await asyncio.wait_for(
+                    asyncio.gather(*tasks, return_exceptions=True),
+                    timeout=480.0  # 8 minutes for all platforms
+                )
+            except asyncio.TimeoutError:
+                logger.error("Platform queries timed out after 8 minutes")
+                error_tracker.add_error("timeout", "Platform queries exceeded time limit", recoverable=False)
+                platform_results = []
+
             all_responses = []
             for result in platform_results:
                 if isinstance(result, list):
                     all_responses.extend(result)
+                elif isinstance(result, Exception):
+                    pass
 
             logger.info(f"Collected {len(all_responses)} responses")
 
-            valid_responses = [r for r in all_responses if r["success"] and r["response"]]
+            valid_responses = [r for r in all_responses if r.get("success") and r.get("response")]
 
             if not valid_responses:
                 logger.error("No valid responses to analyze")
@@ -217,9 +226,16 @@ async def main():
             logger.info("=" * 40)
             
         except Exception as e:
-            logger.error(f"Error: {e}")
+            error_msg = str(e)
+            if "ANTHROPIC_API_KEY" in error_msg or "api_key" in error_msg.lower():
+                error_msg = "API configuration error"
+            logger.error(f"Error: {error_msg}")
             import traceback
-            traceback.print_exc()
+            tb = traceback.format_exc()
+            if "ANTHROPIC_API_KEY" in tb or "api_key" in tb.lower():
+                logger.error("Error details hidden for security")
+            else:
+                traceback.print_exc()
 
 
 if __name__ == "__main__":

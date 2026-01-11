@@ -7,6 +7,15 @@ import asyncio
 import random
 
 
+def _sanitize_error(error: Exception, max_length: int = 200) -> str:
+    """Sanitize error message to remove sensitive data."""
+    error_msg = str(error)[:max_length]
+    sensitive_patterns = ["api_key", "sk-ant", "anthropic", "token", "secret", "password"]
+    if any(pattern in error_msg.lower() for pattern in sensitive_patterns):
+        return "Browser operation failed"
+    return error_msg
+
+
 class BrowserClientError(Exception):
     """Error from browser-based client."""
 
@@ -125,19 +134,45 @@ class BaseBrowserClient(ABC):
         """Handle any popups that appear after page refresh. Override if needed."""
         pass
 
-    async def _wait_for_response_complete(self, timeout_seconds: int = 90) -> bool:
+    async def _wait_for_response_complete(self, timeout_seconds: int = 120) -> bool:
         """Wait for response to complete using polling. Override if platform needs custom logic."""
-        last_content = ""
+        check_interval = 1.5
+        initial_wait_time = 30
+        initial_checks = int(initial_wait_time / check_interval)
+
+        # Phase 1: Check every 1.5s for up to 30s until response starts
+        current_content = ""
+        for _ in range(initial_checks):
+            await asyncio.sleep(check_interval)
+            try:
+                current_content = await self._get_response_text()
+            except Exception as e:
+                self.logger.warning(f"  Error getting response text: {e}")
+                return False
+
+            # Response started! Break out and start stability polling
+            if current_content:
+                break
+
+        # If no response after 30s, give up
+        if not current_content:
+            self.logger.warning("  No response started after 30s")
+            return False
+
+        # Phase 2: Poll until response is stable (no time limit)
+        last_content = current_content
         stable_count = 0
         required_stable = 3
-        check_interval = 1.5
-        max_checks = int(timeout_seconds / check_interval)
 
-        for _ in range(max_checks):
+        while True:
             await asyncio.sleep(check_interval)
-            current_content = await self._get_response_text()
+            try:
+                current_content = await self._get_response_text()
+            except Exception as e:
+                self.logger.warning(f"  Error getting response text: {e}")
+                return len(last_content) > 0
 
-            if current_content == last_content and len(current_content) > 0:
+            if current_content == last_content:
                 stable_count += 1
                 if stable_count >= required_stable:
                     return True
@@ -145,13 +180,12 @@ class BaseBrowserClient(ABC):
                 stable_count = 0
                 last_content = current_content
 
-        return len(last_content) > 0
-
     async def query(self, prompt: str) -> BrowserQueryResult:
         """Send a prompt to the AI platform and get a response."""
         try:
             self._message_count += 1
-            self.logger.info(f"  {self.platform_name} query #{self._message_count}: {prompt[:50]}...")
+            _safe_prompt_preview = prompt[:50].replace('\n', ' ').replace('\r', '')
+            self.logger.info(f"  {self.platform_name} query #{self._message_count}: {_safe_prompt_preview}...")
 
             if self._message_count > 1:
                 await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=30000)
@@ -177,7 +211,7 @@ class BaseBrowserClient(ABC):
             await self.page.keyboard.press("Enter")
 
             self.logger.info("  Waiting for response...")
-            response_complete = await self._wait_for_response_complete(timeout_seconds=90)
+            response_complete = await self._wait_for_response_complete()
 
             if not response_complete:
                 self.logger.warning("  Response may be incomplete (timeout)")
@@ -208,10 +242,10 @@ class BaseBrowserClient(ABC):
         except Exception as e:
             return BrowserQueryResult(
                 platform=self.platform_name,
-                prompt=prompt,
+                prompt=prompt[:200] if prompt else "",
                 response="",
                 success=False,
-                error=str(e)
+                error=_sanitize_error(e)
             )
 
     async def query_with_retry(self, prompt: str, max_retries: int = 2) -> BrowserQueryResult:
@@ -246,11 +280,14 @@ class BaseBrowserClient(ABC):
 
     async def close(self):
         """Close browser and cleanup."""
-        if self.page:
-            await self.page.close()
-        if self.context:
-            await self.context.close()
-        if self.browser:
-            await self.browser.close()
-        if hasattr(self, 'playwright'):
-            await self.playwright.stop()
+        try:
+            if self.page:
+                await self.page.close()
+            if self.context:
+                await self.context.close()
+            if self.browser:
+                await self.browser.close()
+            if hasattr(self, 'playwright'):
+                await self.playwright.stop()
+        except Exception as e:
+            raise
