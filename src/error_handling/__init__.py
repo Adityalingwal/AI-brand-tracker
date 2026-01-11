@@ -1,5 +1,5 @@
 """Error handling module."""
 
-from .tracker import ErrorTracker
+from .tracker import ExecutionTracker
 
-__all__ = ["ErrorTracker"]
+__all__ = ["ExecutionTracker"]

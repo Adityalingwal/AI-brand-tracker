@@ -9,7 +9,7 @@ from apify import Actor
 from dotenv import load_dotenv
 from .config import ActorInput, Platform
 from .utils import validate_input, sanitize_error_message
-from .error_handling import ErrorTracker
+from .error_handling import ExecutionTracker
 from .browser_clients import ChatGPTBrowserClient, PerplexityBrowserClient, GeminiBrowserClient
 from .analyzer import BrandAnalyzer
 
@@ -26,7 +26,7 @@ def create_browser_client(platform: Platform, logger):
     return None
 
 
-async def query_platform(platform: Platform, prompts: list[str], logger, error_tracker: ErrorTracker) -> list[dict]:
+async def query_platform(platform: Platform, prompts: list[str], logger, execution_tracker: ExecutionTracker) -> list[dict]:
     """Query a single platform with all prompts."""
     responses = []
     client = create_browser_client(platform, logger)
@@ -44,7 +44,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                 result = await client.query_with_retry(prompt_text, max_retries=2)
                 
                 if result.success:
-                    error_tracker.add_success(f"{platform.value}:{prompt_id}", {})
+                    execution_tracker.add_success(f"{platform.value}:{prompt_id}", {})
                     responses.append({
                         "prompt_id": prompt_id,
                         "prompt_text": prompt_text,
@@ -53,7 +53,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                         "success": True,
                     })
                 else:
-                    error_tracker.add_error("query_failed", result.error or "Unknown", context=prompt_id)
+                    execution_tracker.add_error("query_failed", result.error or "Unknown", context=prompt_id)
                     responses.append({
                         "prompt_id": prompt_id,
                         "prompt_text": prompt_text,
@@ -65,7 +65,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                     
             except Exception as e:
                 _error_msg = sanitize_error_message(e)
-                error_tracker.add_error("query_exception", _error_msg, context=prompt_id)
+                execution_tracker.add_error("query_exception", _error_msg, context=prompt_id)
                 responses.append({
                     "prompt_id": prompt_id,
                     "prompt_text": prompt_text[:200],
@@ -78,7 +78,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
     except Exception as e:
         _error_msg = sanitize_error_message(e)
         logger.error(f"[{platform.value}] Failed: {_error_msg}")
-        error_tracker.add_error("platform_failed", _error_msg, context=platform.value)
+        execution_tracker.add_error("platform_failed", _error_msg, context=platform.value)
     finally:
         try:
             await client.close()
@@ -98,7 +98,7 @@ async def main():
 
     async with Actor:
         logger = Actor.log
-        error_tracker = ErrorTracker()
+        execution_tracker = ExecutionTracker()
         started_at = datetime.now(timezone.utc)
 
         logger.info("AI Brand Tracker - Starting")
@@ -123,7 +123,7 @@ async def main():
             all_prompts = actor_input.prompts
             
             tasks = [
-                query_platform(platform, all_prompts, logger, error_tracker)
+                query_platform(platform, all_prompts, logger, execution_tracker)
                 for platform in actor_input.platforms
             ]
             
@@ -133,7 +133,7 @@ async def main():
                     timeout=480.0  # 8 minutes for all platforms
                 )
             except asyncio.TimeoutError:
-                error_tracker.add_error("timeout", "Platform queries exceeded time limit", recoverable=False)
+                execution_tracker.add_error("timeout", "Platform queries exceeded time limit", recoverable=False)
                 platform_results = []
 
             all_responses = []

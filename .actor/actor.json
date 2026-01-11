@@ -19,12 +19,12 @@
       {
         "eventName": "prompt-analyzed",
         "displayName": "Prompt Analyzed",
-        "pricePerEvent": 0.02,
+        "pricePerEvent": 0.20,
         "pricePerEventByTier": {
-          "FREE": 0.02,
-          "BRONZE": 0.018,
-          "SILVER": 0.015,
-          "GOLD": 0.012
+          "FREE": 0.20,
+          "BRONZE": 0.18,
+          "SILVER": 0.15,
+          "GOLD": 0.12
         }
       }
     ]

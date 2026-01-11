@@ -23,7 +23,7 @@ class SuccessRecord:
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
 
-class ErrorTracker:
+class ExecutionTracker:
     """Track errors and successes during actor execution."""
 
     def __init__(self):
