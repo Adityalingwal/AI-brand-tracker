@@ -1,129 +1,64 @@
 # AI Brand Tracker
 
-Track your brand's visibility across AI platforms — **Zero API keys required from users!** This Actor uses browser automation to query ChatGPT, Gemini, and Perplexity directly, just like a real user would. All platforms are queried in parallel for fast results.
+Track how AI platforms like ChatGPT, Gemini, and Perplexity recommend your brand versus competitors. Get instant visibility into which brands dominate AI-generated recommendations in your industry — perfect for marketing teams, SEO specialists, and brand managers optimizing for the AI search era.
 
-## 🆕 What's New in v2.0
+## 🚀 Why Use AI Brand Tracker?
 
-- 🆓 **No API Keys Needed** — Users don't need to provide any API keys!
-- 🌐 **Browser Automation** — Uses Playwright to interact with AI platforms like a real user
-- ⚡ **Parallel Execution** — All platforms are queried simultaneously (not sequentially)
-- 🔄 **Replaced Claude with Perplexity** — Claude requires login, Perplexity doesn't
+As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and other AI platforms perceive your brand is critical. This Actor provides:
 
-## Main Features
-
-- 🤖 **Multi-Platform Analysis** — Queries ChatGPT, Gemini, and Perplexity simultaneously
-- 🎯 **Template-Based Prompts** — 5 pre-built prompt templates covering recommendations, comparisons, pricing, use-cases, and reviews
-- 📊 **Brand Mention Extraction** — Detects mentions with count, rank, context, and recommendation status
-- 🔗 **Citation Discovery** — Identifies URLs cited in AI responses
-- 🏆 **Competitive Leaderboards** — Compare visibility scores and citation share across all brands
-- 📈 **Platform Breakdown** — See which AI platforms favor which brands
+- **AI Visibility Monitoring** — See exactly how often AI platforms mention and recommend your brand
+- **Competitive Intelligence** — Discover which competitors dominate AI recommendations in your space
+- **Cross-Platform Insights** — Compare how different AI platforms (ChatGPT vs Gemini vs Perplexity) perceive your brand
+- **Actionable Gap Analysis** — Identify specific queries where your brand is missing from AI recommendations
+- **Plain English Summaries** — No complex metrics, just clear insights you can act on
 
 ---
 
-## How to Use
+## 🧭 How to Use
 
-**Step 1: Provide Your Brand and Category**
+1. Enter your **brand name** and **industry category** (e.g., "CRM software")
+2. Add **competitor brands** you want to compare against (optional)
+3. Select which **AI platforms** to query (ChatGPT, Gemini, Perplexity)
+4. Add your own **custom prompts**
+5. Click **Run** and receive a comprehensive visibility report
 
-Enter your brand name, industry category, and optionally competitors to compare against:
+---
+
+## 📊 What You Get
+
+For each brand tracked, you receive:
+
+| Insight               | Description                                      |
+| --------------------- | ------------------------------------------------ |
+| **Mention Count**     | How many times the brand appears in AI responses |
+| **Platform Ranking**  | Which brands rank highest on each AI platform    |
+| **Visibility Gaps**   | Specific prompts where your brand is missing     |
+| **Context Analysis**  | How AI describes and positions each brand        |
+| **Full AI Responses** | Complete responses for verification and analysis |
+
+---
+
+### Sample Input
 
 ```json
 {
   "category": "CRM software",
   "myBrand": "Salesforce",
-  "competitors": ["HubSpot", "Pipedrive", "Zoho"]
-}
-```
-
-**Step 2: Select AI Platforms**
-
-Choose which AI platforms to query:
-
-```json
-{
-  "platforms": ["chatgpt", "gemini", "perplexity"]
-}
-```
-
-**That's it!** No API keys needed. The Actor handles everything.
-
-**Step 3: The Actor Queries All Platforms in Parallel**
-
-The Actor opens browser windows for each platform simultaneously and queries them like a real user would.
-
-**Step 4: Responses are Analyzed**
-
-The Actor extracts from each response:
-
-- Brand mentions (with count, rank, and context)
-- Whether brands are explicitly recommended
-- URLs/citations included in responses
-- Winner/loser determination per prompt
-
-**Step 5: You Receive Comprehensive Results**
-
-The final output includes detailed prompt-by-prompt results, brand summaries, competitive leaderboards, and run metadata.
-
----
-
-## 📥 Input Parameters
-
-| Parameter            | Type    | Required | Description                                      | Default |
-| -------------------- | ------- | -------- | ------------------------------------------------ | ------- |
-| `category`           | String  | ✅ Yes   | Industry/niche to analyze (e.g., "CRM software") | —       |
-| `myBrand`            | String  | ✅ Yes   | Your brand name to track                         | —       |
-| `competitors`        | Array   | No       | Competitor brands to compare against (max 10)    | `[]`    |
-| `platforms`          | Array   | ✅ Yes   | AI platforms: `chatgpt`, `gemini`, `perplexity`  | —       |
-| `promptCount`        | Integer | No       | Number of template prompts to use (1-5)          | `1`     |
-| `customPrompts`      | Array   | No       | Your own prompts to use instead of templates     | `[]`    |
-| `proxyConfiguration` | Object  | No       | Apify Proxy settings (recommended)               | Enabled |
-
-### Example: Minimum Required Input
-
-```json
-{
-  "category": "CRM software",
-  "myBrand": "Salesforce",
-  "platforms": ["chatgpt"]
-}
-```
-
-### Example: Full Configuration
-
-```json
-{
-  "category": "Email marketing platforms",
-  "myBrand": "Mailchimp",
-  "competitors": ["Klaviyo", "ConvertKit", "Brevo"],
+  "competitors": ["HubSpot", "Pipedrive"],
   "platforms": ["chatgpt", "gemini", "perplexity"],
-  "promptCount": 5
-}
-```
-
-### Example: Custom Prompts
-
-```json
-{
-  "category": "Email marketing platforms",
-  "myBrand": "Mailchimp",
-  "competitors": ["Klaviyo", "ConvertKit"],
-  "platforms": ["chatgpt", "perplexity"],
-  "customPrompts": [
-    "What's the best email marketing tool for e-commerce?",
-    "Which email platform has the best automation features?",
-    "Compare Mailchimp vs Klaviyo for small businesses"
+  "prompts": [
+    "What are the best CRM tools for small businesses?",
+    "Compare enterprise CRM solutions",
+    "Which CRM has the best automation features?"
   ]
 }
 ```
 
 ---
 
-## 📤 Output Format
+## 📤 Output Example
 
-Results are stored in the Apify Dataset as a **single consolidated JSON object**. You can download as JSON, CSV, or Excel.
-
-### Output Structure
-
-The output contains everything in one clean, organized structure:
+Results are stored in the Apify Dataset. You can download them as JSON, CSV, or Excel.
 
 ```json
 {
@@ -137,12 +72,16 @@ The output contains everything in one clean, organized structure:
     "brand": "Salesforce",
     "platformPerformance": {
       "chatgpt": {
-        "summary": "Mentioned 5 times across 2 out of 3 prompts. Ranked #2 on this platform (HubSpot ranked #1).",
-        "promptsMentionSummary": "Mentioned in Prompt #1 and Prompt #3. Missing from Prompt #2."
+        "summary": "Salesforce maintains strong enterprise positioning on ChatGPT with 5 mentions across 2 of 3 prompts — ranking #2 behind HubSpot's dominant 7 mentions. The platform consistently positions Salesforce as the sophisticated, full-featured leader for complex enterprise needs, but notably absent from small business recommendations where affordability-focused alternatives dominate.",
+        "promptsMentionSummary": "Strong presence in enterprise comparison and automation feature queries where Salesforce is positioned as the industry leader. **Critical visibility gap**: Completely absent from small business CRM recommendations — a high-volume search dominated by HubSpot, Zoho, and Pipedrive."
       },
       "gemini": {
-        "summary": "Mentioned 7 times across 3 out of 3 prompts. Ranked #1 on this platform.",
-        "promptsMentionSummary": "Mentioned in all prompts."
+        "summary": "Salesforce achieves commanding visibility on Gemini with 7 mentions across all 3 prompts — ranking #1 ahead of HubSpot (5 mentions) and Pipedrive (3 mentions). Gemini consistently features Salesforce as the comprehensive enterprise solution with advanced AI capabilities through Einstein.",
+        "promptsMentionSummary": "Mentioned in all prompts with particularly strong positioning in automation and enterprise comparison queries. Gemini emphasizes Salesforce's customization depth, AppExchange ecosystem, and AI-powered forecasting as key differentiators."
+      },
+      "perplexity": {
+        "summary": "Salesforce maintains selective but authoritative visibility on Perplexity, appearing in 2 of 3 prompts with 5 total mentions — ranking #2 overall behind HubSpot's 6 mentions. Perplexity positions Salesforce as the enterprise-grade solution for complex, large-scale operations requiring advanced customization.",
+        "promptsMentionSummary": "Featured prominently in enterprise comparison and automation queries. **Visibility gap**: Absent from small business recommendations where Perplexity prioritizes affordability-focused alternatives like Zoho and Freshsales."
       }
     }
   },
@@ -151,8 +90,32 @@ The output contains everything in one clean, organized structure:
     "HubSpot": {
       "platformPerformance": {
         "chatgpt": {
-          "summary": "Mentioned 8 times across 3 out of 3 prompts. Ranked #1 on this platform.",
-          "promptsMentionSummary": "Mentioned in all prompts."
+          "summary": "HubSpot dominates ChatGPT with commanding visibility across all 3 queries and 7 total mentions — establishing clear #1 ranking ahead of Salesforce (5 mentions) and Pipedrive (3 mentions). ChatGPT consistently features HubSpot as the leading recommendation for small businesses and as a credible enterprise alternative.",
+          "promptsMentionSummary": "Complete coverage across all query types with no visibility gaps. Particularly dominant in small business recommendations (featured first and prominently) and automation features (praised for intuitive workflows and free tier)."
+        },
+        "gemini": {
+          "summary": "HubSpot achieves strong visibility on Gemini with 5 mentions across all 3 prompts — ranking #2 behind Salesforce (7 mentions). Gemini positions HubSpot as the accessible alternative with excellent ease-of-use, though it acknowledges limitations for complex enterprise needs.",
+          "promptsMentionSummary": "Consistent mentions across all prompts with emphasis on HubSpot's free tier, marketing integration, and user-friendly interface. Positioned as ideal for SMBs and growing businesses."
+        },
+        "perplexity": {
+          "summary": "HubSpot leads on Perplexity with 6 total mentions across all 3 prompts — ranking #1 ahead of Salesforce (5 mentions) and Pipedrive (3 mentions). The platform consistently positions HubSpot as the go-to recommendation for businesses seeking balance between features and accessibility.",
+          "promptsMentionSummary": "Dominant in small business recommendations and automation queries. Featured as the accessible alternative to Salesforce in enterprise comparisons, capturing 'better value for smaller teams' positioning."
+        }
+      }
+    },
+    "Pipedrive": {
+      "platformPerformance": {
+        "chatgpt": {
+          "summary": "Pipedrive achieves focused visibility on ChatGPT, appearing in 2 of 3 prompts with 3 total mentions — ranking #3 behind HubSpot and Salesforce. Positioned as an affordable, sales-pipeline-focused alternative for small teams.",
+          "promptsMentionSummary": "Mentioned in small business recommendations and automation queries as a cost-effective option with visual pipeline management. **Absent from enterprise comparison query** — limiting perception as an enterprise-grade competitor."
+        },
+        "gemini": {
+          "summary": "Pipedrive shows modest visibility on Gemini with 3 mentions across 2 of 3 prompts — ranking #3. Gemini emphasizes Pipedrive's pipeline-focused approach and competitive pricing for sales teams.",
+          "promptsMentionSummary": "Featured in small business and automation queries with focus on visual pipelines and email automation. Missing from enterprise comparison discussions."
+        },
+        "perplexity": {
+          "summary": "Pipedrive achieves targeted visibility on Perplexity with 3 mentions across 2 of 3 prompts — ranking #3 well behind HubSpot (6) and Salesforce (5). Perplexity positions Pipedrive as an affordable, sales-focused alternative.",
+          "promptsMentionSummary": "Appears in small business recommendations and automation features queries as a cost-effective, pipeline-focused option. Absent from enterprise comparison query."
         }
       }
     }
@@ -163,31 +126,101 @@ The output contains everything in one clean, organized structure:
       "platform": "chatgpt",
       "prompts": [
         {
-          "promptText": "What are the best CRM tools?",
-          "response": "The top CRM tools include Salesforce, HubSpot...",
-          "allBrandsMentioned": ["Salesforce", "HubSpot", "Zoho"]
+          "promptText": "What are the best CRM tools for small businesses?",
+          "response": "For small businesses, the best CRM options include HubSpot CRM (free tier with robust features), Zoho CRM (affordable at $14/user/month with excellent customization), and Pipedrive (visual pipeline management starting at $14/user/month). These tools prioritize ease of use, affordability, and essential features like contact management and sales automation...",
+          "allBrandsMentioned": [
+            "HubSpot",
+            "Zoho",
+            "Pipedrive",
+            "Freshsales",
+            "Agile CRM"
+          ]
+        },
+        {
+          "promptText": "Compare enterprise CRM solutions",
+          "response": "Salesforce excels for enterprise sales teams handling complex, large-scale operations with features like Einstein AI, advanced forecasting, and deep customization through AppExchange. HubSpot Enterprise offers a more accessible alternative with simpler implementation but may lack depth for multi-region complexity...",
+          "allBrandsMentioned": [
+            "Salesforce",
+            "HubSpot",
+            "Microsoft Dynamics",
+            "Oracle"
+          ]
+        },
+        {
+          "promptText": "Which CRM has the best automation features?",
+          "response": "HubSpot CRM stands out for intuitive automation with email sequences, lead routing, and deal stage workflows. Salesforce provides enterprise-level automation with Einstein AI for lead scoring and predictive analytics. For budget-conscious teams, Zoho CRM offers Zia AI for predictions and workflow automation at lower cost...",
+          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho", "Freshsales"]
+        }
+      ]
+    },
+    {
+      "platform": "gemini",
+      "prompts": [
+        {
+          "promptText": "What are the best CRM tools for small businesses?",
+          "response": "Top CRM solutions for small businesses include HubSpot (excellent free tier), Salesforce Essentials (scaled-down enterprise features), and Zoho CRM (best value for customization). Each offers contact management, pipeline tracking, and integrations with popular business tools...",
+          "allBrandsMentioned": [
+            "HubSpot",
+            "Salesforce",
+            "Zoho",
+            "Pipedrive",
+            "Freshsales"
+          ]
+        },
+        {
+          "promptText": "Compare enterprise CRM solutions",
+          "response": "Salesforce remains the market leader for enterprise CRM with unmatched customization, Einstein AI capabilities, and the largest ecosystem of integrations. HubSpot has emerged as a viable alternative for companies seeking faster implementation with strong marketing alignment...",
+          "allBrandsMentioned": [
+            "Salesforce",
+            "HubSpot",
+            "Microsoft Dynamics",
+            "SAP"
+          ]
+        },
+        {
+          "promptText": "Which CRM has the best automation features?",
+          "response": "Salesforce leads in enterprise automation with Einstein AI powering lead scoring, forecasting, and workflow automation. HubSpot excels in marketing-sales alignment with intuitive sequences. Pipedrive offers strong pipeline automation with visual workflows...",
+          "allBrandsMentioned": ["Salesforce", "HubSpot", "Pipedrive", "Zoho"]
+        }
+      ]
+    },
+    {
+      "platform": "perplexity",
+      "prompts": [
+        {
+          "promptText": "What are the best CRM tools for small businesses?",
+          "response": "HubSpot CRM, Zoho CRM, and Pipedrive stand out as top CRM options for small businesses due to their affordability, ease of use, and essential features. HubSpot offers a robust free tier, Zoho excels in customization, and Pipedrive focuses on visual pipeline management...",
+          "allBrandsMentioned": [
+            "HubSpot",
+            "Zoho",
+            "Pipedrive",
+            "Freshsales",
+            "Less Annoying CRM"
+          ]
+        },
+        {
+          "promptText": "Compare enterprise CRM solutions",
+          "response": "Salesforce excels over HubSpot for enterprise sales teams handling complex operations. Salesforce offers highly customizable pipelines, territory management, and Einstein AI for predictions. HubSpot suits smaller or faster-moving teams but lacks depth for intricate enterprise needs...",
+          "allBrandsMentioned": ["Salesforce", "HubSpot"]
+        },
+        {
+          "promptText": "Which CRM has the best automation features?",
+          "response": "HubSpot CRM stands out for intuitive automation tailored to sales and marketing workflows. Salesforce excels in enterprise-level customization with Einstein AI. Zoho CRM features Zia AI for predictions and multi-channel automation at lower cost...",
+          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho", "Freshsales"]
         }
       ]
     }
   ],
 
   "executionMetadata": {
-    "startedAt": "2025-01-10T12:00:00Z",
-    "completedAt": "2025-01-10T12:05:30Z",
-    "durationMs": 330000,
+    "startedAt": "2025-01-11T12:00:00Z",
+    "completedAt": "2025-01-11T12:02:30Z",
+    "durationMs": 150000,
     "totalResponses": 9,
     "platformsQueried": ["chatgpt", "gemini", "perplexity"]
   }
 }
 ```
-
-### Key Features
-
-- **Single Output**: One consolidated record per run (no more 14+ scattered records)
-- **Plain English Summaries**: No complex metrics like "visibilityScore: 75.5%" — just clear summaries
-- **Platform-Focused**: See how each brand performs on each AI platform
-- **Actionable Insights**: Know exactly which prompts missed your brand
-- **Complete Transparency**: Full AI responses included for verification
 
 ---
 
@@ -195,97 +228,98 @@ The output contains everything in one clean, organized structure:
 
 ### Marketing Teams
 
-- **Monitor Brand Visibility** — Track how often AI mentions your brand
-- **Competitive Intelligence** — Discover which competitors dominate AI recommendations
-- **Identify Content Gaps** — Find prompts where your brand is missing
+- Monitor brand visibility in AI-generated recommendations
+- Track competitive positioning across AI platforms
+- Identify content gaps where competitors outrank you
 
 ### SEO & GEO Specialists
 
-- **AI Search Optimization** — Understand how AI platforms perceive your brand
-- **Citation Discovery** — Find which sources AI platforms cite
-- **Platform-Specific Strategies** — Tailor content for different AI platforms
+- Optimize content for AI search engines (Generative Engine Optimization)
+- Understand how AI platforms source and cite information
+- Develop platform-specific content strategies
 
 ### Brand Managers
 
-- **Brand Perception Analysis** — See how AI describes your brand
-- **Competitive Positioning** — Track visibility vs competitors
-- **Cross-Platform Insights** — Compare brand strength across AI platforms
+- Analyze brand perception across AI platforms
+- Benchmark against competitors
+- Track visibility changes over time with scheduled runs
+
+### Sales Intelligence
+
+- Understand how prospects research your category via AI
+- Identify which competitors appear in buying-intent queries
+- Tailor sales messaging based on AI positioning
 
 ---
 
-## 💰 Pricing
+## 💰 Cost of Usage
 
-This Actor uses **Pay-Per-Event** pricing with a simple flat fee.
+This Actor uses Pay-Per-Event pricing. You pay a flat fee per complete analysis, not for platform usage.
 
-| Event            | Price | Description                                        |
+| Event            | Price | What You Get                                       |
 | ---------------- | ----- | -------------------------------------------------- |
-| `brand-analysis` | $0.20 | One complete analysis across all platforms/prompts |
+| `brand-analysis` | $0.20 | Complete analysis across all platforms and prompts |
 
-**What you get for $0.20:**
+**💡 Example:** Analyzing your brand across 3 AI platforms with 3 prompts costs $0.20 total.
 
-- Query up to **3 AI platforms** (ChatGPT, Gemini, Perplexity)
-- Analyze up to **3 prompts** per run
-- Get brand mention extraction, competitive analysis, and platform breakdowns
-- All results consolidated into one clean output
-
-### 💎 Tier Discounts
+### Tier Discounts
 
 Apify subscription members get discounts:
 
-| Your Apify Plan | Price per Analysis |
-| --------------- | ------------------ |
-| Free / Starter  | $0.20              |
-| Bronze          | $0.18 (10% off)    |
-| Silver          | $0.15 (25% off)    |
-| Gold            | $0.12 (40% off)    |
-
-### 🆓 Free Plan Users
-
-New Apify users get **$5 in free credits** — enough for **25 complete brand analyses** to try the Actor!
+| Plan           | Price per Analysis |
+| -------------- | ------------------ |
+| Free / Starter | $0.20              |
+| Bronze         | $0.18 (10% off)    |
+| Silver         | $0.15 (25% off)    |
+| Gold           | $0.12 (40% off)    |
 
 ---
 
 ## ❓ FAQ
 
-**Q: Do I need any API keys?**
+**Q: How does it query AI platforms without API keys?**
 
-No! The Actor uses browser automation to query AI platforms and has built-in analysis. You don't need to provide any API keys.
+The Actor uses browser automation to interact with AI platforms exactly like a human user would.
 
-**Q: How does it work without API keys?**
+**Q: Which AI platforms are supported?**
 
-The Actor opens real browser windows (using Playwright) and interacts with AI platforms exactly like a human user would — typing queries, waiting for responses, and extracting the text.
+Currently: ChatGPT, Gemini, and Perplexity.
 
-**Q: Why was Claude replaced with Perplexity?**
+**Q: How accurate is the brand detection?**
 
-Claude's web interface requires login/authentication, making it impossible to automate. Perplexity allows queries without login.
+An AI analyzes each response to detect brand mentions, context, and positioning. Full responses are included so you can verify results.
 
-**Q: How fast is it?**
+**Q: Can I track visibility over time?**
 
-All platforms are queried in parallel, so querying 3 platforms takes about the same time as querying 1.
+Yes! Schedule recurring runs in Apify Console to track how your brand visibility changes week-over-week.
 
 ---
 
 ## 🧩 Known Limitations
 
-| Limitation             | Details                                        |
-| ---------------------- | ---------------------------------------------- |
-| Maximum 5 prompts      | Template or custom prompts capped at 5 per run |
-| Maximum 10 competitors | Up to 10 competitor brands can be tracked      |
-| Rate limits            | AI platforms may limit queries                 |
+| Limitation            | Details                                                       |
+| --------------------- | ------------------------------------------------------------- |
+| Rate limits           | AI platforms may throttle queries during high-traffic periods |
+| Response variability  | AI responses can vary between runs for the same prompt        |
+| Platform availability | Occasional downtime on AI platforms may affect results        |
+
+---
+
+## 💬 Questions or Issues?
+
+If you encounter problems or have feature requests, please open an issue on the [Issues tab](https://apify.com/your-username/ai-brand-tracker/issues) of the Actor's page in the Apify Store.
 
 ---
 
 ## 📝 Changelog
 
-### v1.0.0 (2025-01-10)
+### v1.0.0 (2025-01-11)
 
 **Initial Release** 🚀
 
-- **Browser automation** - No API keys needed from users (Playwright-based)
-- **Multi-platform support** - ChatGPT, Gemini, and Perplexity queried in parallel
-- **Claude Haiku 4.5 analysis** - Fast, accurate AI-powered brand mention detection with extended thinking
-- **Single consolidated output** - Clean JSON structure with platform-wise performance
-- **Plain English summaries** - User-friendly summaries instead of technical metrics
-- **5 pre-built prompt templates** - Industry-tested questions for brand visibility
-- **Pay-per-event pricing** - $0.20 per complete brand analysis
-- **Stealth browser mode** - Avoids bot detection on AI platforms
+- Multi-platform brand visibility tracking (ChatGPT, Gemini, Perplexity)
+- AI-powered brand mention detection with context analysis
+- Competitive benchmarking across AI platforms
+- Plain English summaries for actionable insights
+- Custom prompt support
+- Pay-per-event pricing ($0.20 per complete analysis)
