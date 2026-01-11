@@ -83,7 +83,7 @@ class BrandAnalyzer:
 
                 if "summary" in output:
                     output["summary"]["category"] = category
-
+                                            
                 self.logger.info("Analysis complete")
                 return output
 

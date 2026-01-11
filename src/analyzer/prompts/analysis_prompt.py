@@ -133,18 +133,16 @@ Return this exact JSON structure:
     }}
   }},
 
-  "promptResults": [
-    {{
-      "platform": "<platform name>",
-      "prompts": [
-        {{
-          "promptText": "<original question>",
-          "response": "<full answer text>",
-          "allBrandsMentioned": ["<brand1>", "<brand2>", "..."]
+  "competitorBrandPerformance": {{
+    "<competitor>": {{
+      "platformPerformance": {{
+        "<platform>": {{
+          "summary": "<same professional narrative format>",
+          "promptsMentionSummary": "<same actionable format with gaps>"
         }}
-      ]
+      }}
     }}
-  ]
+  }}
 }}
 
 ## CRITICAL REQUIREMENTS
@@ -154,7 +152,6 @@ Return this exact JSON structure:
 - Flag visibility gaps with **bold** markers
 - Reference query TYPES (recommendations, comparisons) not "Query #1"
 - Preserve exact brand name capitalization from input
-- Include ALL brands found in allBrandsMentioned (even those not in competitors list)
 - If platform had errors/no data: summary = "Platform data unavailable — unable to analyze visibility."
 
 Generate the analysis:"""

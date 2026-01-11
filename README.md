@@ -28,13 +28,12 @@ As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and 
 
 For each brand tracked, you receive:
 
-| Insight               | Description                                      |
-| --------------------- | ------------------------------------------------ |
-| **Mention Count**     | How many times the brand appears in AI responses |
-| **Platform Ranking**  | Which brands rank highest on each AI platform    |
-| **Visibility Gaps**   | Specific prompts where your brand is missing     |
-| **Context Analysis**  | How AI describes and positions each brand        |
-| **Full AI Responses** | Complete responses for verification and analysis |
+| Insight              | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| **Mention Count**    | How many times the brand appears in AI responses |
+| **Platform Ranking** | Which brands rank highest on each AI platform    |
+| **Visibility Gaps**  | Specific prompts where your brand is missing     |
+| **Context Analysis** | How AI describes and positions each brand        |
 
 ---
 
@@ -115,44 +114,6 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
       }
     }
   },
-
-  "promptResults": [
-    {
-      "platform": "chatgpt",
-      "prompts": [
-        {
-          "promptText": "What are the best CRM tools for small businesses?",
-          "response": "HubSpot CRM, Zoho CRM, and Pipedrive stand out for small businesses due to affordability and ease of use...",
-          "allBrandsMentioned": ["HubSpot", "Zoho", "Pipedrive", "Freshsales"]
-        },
-        {
-          "promptText": "Compare enterprise CRM solutions",
-          "response": "Salesforce excels for enterprise teams with Einstein AI, advanced forecasting, and AppExchange ecosystem...",
-          "allBrandsMentioned": ["Salesforce", "HubSpot", "Microsoft Dynamics"]
-        }
-      ]
-    },
-    {
-      "platform": "gemini",
-      "prompts": [
-        {
-          "promptText": "What are the best CRM tools for small businesses?",
-          "response": "Top options include HubSpot (excellent free tier), Salesforce Essentials, and Zoho CRM...",
-          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho", "Pipedrive"]
-        }
-      ]
-    },
-    {
-      "platform": "perplexity",
-      "prompts": [
-        {
-          "promptText": "Which CRM has the best automation features?",
-          "response": "HubSpot stands out for intuitive automation. Salesforce excels in enterprise-level AI-powered workflows...",
-          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho"]
-        }
-      ]
-    }
-  ],
 
   "executionMetadata": {
     "startedAt": "2025-01-11T12:00:00Z",
