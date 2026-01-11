@@ -5,15 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, Any
 import asyncio
 import random
-
-
-def _sanitize_error(error: Exception, max_length: int = 200) -> str:
-    """Sanitize error message to remove sensitive data."""
-    error_msg = str(error)[:max_length]
-    sensitive_patterns = ["api_key", "sk-ant", "anthropic", "token", "secret", "password"]
-    if any(pattern in error_msg.lower() for pattern in sensitive_patterns):
-        return "Browser operation failed"
-    return error_msg
+from ..utils import sanitize_error_message
 
 
 class BrowserClientError(Exception):
@@ -245,7 +237,7 @@ class BaseBrowserClient(ABC):
                 prompt=prompt[:200] if prompt else "",
                 response="",
                 success=False,
-                error=_sanitize_error(e)
+                error=sanitize_error_message(e)
             )
 
     async def query_with_retry(self, prompt: str, max_retries: int = 2) -> BrowserQueryResult:

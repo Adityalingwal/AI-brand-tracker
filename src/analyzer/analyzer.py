@@ -2,6 +2,7 @@
 
 import json
 from typing import Optional
+from ..utils import sanitize_error_message
 
 
 class BrandAnalyzer:
@@ -221,7 +222,5 @@ Generate the analysis now:"""
                 return None
 
         except Exception as e:
-            self.logger.error(f"[Analyzer] Analysis failed: {e}")
-            import traceback
-            traceback.print_exc()
+            self.logger.error(f"[Analyzer] Analysis failed: {sanitize_error_message(e)}")
             return None
