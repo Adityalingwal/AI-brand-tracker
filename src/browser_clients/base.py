@@ -127,7 +127,7 @@ class BaseBrowserClient(ABC):
                     await stealth.apply_stealth_async(self.page)
                 except Exception:
                     pass
-            await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
+            await self.page.goto(self.base_url, wait_until="commit", timeout=60000)
             await asyncio.sleep(3)
 
             await self._platform_init()
