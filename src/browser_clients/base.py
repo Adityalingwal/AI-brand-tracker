@@ -77,12 +77,6 @@ class BaseBrowserClient(ABC):
         Note: headless=False is required because ChatGPT and Perplexity 
         block headless browsers. We use Xvfb for virtual display on servers.
         """
-        is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1"
-        
-        # Always use headed mode - platforms block headless browsers
-        # Xvfb provides virtual display on Apify
-        self.logger.info(f"[{self.platform_name}] Browser config: headless={headless}, apify={is_apify}")
-        
         self.playwright = await async_playwright().start()
 
         # Browser args - more permissive on Apify
