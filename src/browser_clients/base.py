@@ -78,8 +78,9 @@ class BaseBrowserClient(ABC):
         block headless browsers. We use Xvfb for virtual display on servers.
         """
         self.playwright = await async_playwright().start()
+        
+        is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1"
 
-        # Browser args - more permissive on Apify
         browser_args = [
             "--no-sandbox",
             "--disable-setuid-sandbox",
