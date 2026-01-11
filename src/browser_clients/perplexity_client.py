@@ -41,7 +41,7 @@ class PerplexityBrowserClient(BaseBrowserClient):
                 pass
 
         try:
-            await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
+            await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
         except Exception as e:
             raise BrowserClientError(
                 message=f"Perplexity page did not load properly: {e}",
@@ -50,19 +50,7 @@ class PerplexityBrowserClient(BaseBrowserClient):
             )
 
     async def _get_response_text(self) -> str:
-        """Extract response text with fallback selectors."""
         try:
-            response_elem = await self.page.query_selector("#markdown-content-0 > div > div > div")
-            if response_elem:
-                text = await response_elem.inner_text()
-                if text and text.strip():
-                    return text.strip()
-
-            response_elem = await self.page.query_selector("#markdown-content-0")
-            if response_elem:
-                text = await response_elem.inner_text()
-                return text.strip() if text else ""
-
             markdown_elems = await self.page.query_selector_all("[id^='markdown-content']")
             if markdown_elems:
                 last_elem = markdown_elems[-1]

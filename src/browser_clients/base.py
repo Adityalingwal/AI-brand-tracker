@@ -182,7 +182,7 @@ class BaseBrowserClient(ABC):
         """Send a prompt to the AI platform and get a response."""
         try:
             self._message_count += 1
-            await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
+            await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
             textbox = await self.page.query_selector(self.textbox_selector)
 
             if not textbox:

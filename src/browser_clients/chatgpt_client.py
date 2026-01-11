@@ -45,7 +45,7 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         await self._dismiss_login_popup()
 
         try:
-            await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
+            await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
         except Exception as e:
             raise BrowserClientError(
                 message=f"ChatGPT page did not load properly: {e}",
@@ -71,16 +71,24 @@ class ChatGPTBrowserClient(BaseBrowserClient):
 
     async def _get_response_text(self) -> str:
         try:
-            articles = await self.page.query_selector_all("article")
+            articles = await self.page.query_selector_all("article[data-testid^='conversation-turn']")
 
-            if len(articles) < 2:
+            if not articles:
                 return ""
 
             last_article = articles[-1]
-            text = await last_article.inner_text()
+            
+            content_div = await last_article.query_selector(".markdown")
+            if content_div:
+                text = await content_div.inner_text()
+                if text and len(text.strip()) > 50:
+                    return text.strip()
 
-            return text.strip() if text else ""
+            text = await last_article.inner_text()
+            if text and len(text.strip()) > 50:
+                return text.strip()
+
+            return ""
 
         except Exception:
             return ""
-

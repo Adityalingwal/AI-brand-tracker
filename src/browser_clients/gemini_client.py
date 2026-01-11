@@ -49,7 +49,7 @@ class GeminiBrowserClient(BaseBrowserClient):
             pass
 
         try:
-            await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
+            await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
         except Exception as e:
             raise BrowserClientError(
                 message=f"Gemini page did not load properly: {e}",
