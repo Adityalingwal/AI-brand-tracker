@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, Any
 import asyncio
 import random
+import os
 
 from playwright.async_api import async_playwright
 
@@ -70,20 +71,43 @@ class BaseBrowserClient(ABC):
         for char in text:
             await self.page.keyboard.type(char, delay=random.randint(min_delay, max_delay))
 
-    async def initialize(self, headless: bool = False):
+    async def initialize(self, headless: bool = None):
         """Initialize browser and navigate to platform."""
+        # Detect if running on Apify
+        is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1" or os.environ.get("APIFY_TOKEN") is not None
+        
+        # Auto-detect headless mode: True on Apify, False locally
+        if headless is None:
+            headless = is_apify
+        
         self.playwright = await async_playwright().start()
+
+        # Browser args - more permissive on Apify
+        browser_args = [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-blink-features=AutomationControlled",
+            "--disable-infobars",
+            "--disable-gpu",
+            "--disable-software-rasterizer",
+            "--single-process",
+        ]
+        
+        if is_apify:
+            browser_args.extend([
+                "--disable-extensions",
+                "--disable-background-networking",
+                "--disable-sync",
+                "--no-first-run",
+                "--no-zygote",
+            ])
+        else:
+            browser_args.append("--window-size=1920,1080")
 
         self.browser = await self.playwright.chromium.launch(
             headless=headless,
-            args=[
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-blink-features=AutomationControlled",
-                "--disable-infobars",
-                "--window-size=1920,1080",
-            ]
+            args=browser_args
         )
 
         self.context = await self.browser.new_context(
