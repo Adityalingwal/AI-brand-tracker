@@ -71,59 +71,71 @@ class BaseBrowserClient(ABC):
         for char in text:
             await self.page.keyboard.type(char, delay=random.randint(min_delay, max_delay))
 
-    async def initialize(self, headless: bool = False):
-        """Initialize browser and navigate to platform.
-        
-        Note: headless=False is required because ChatGPT and Perplexity 
-        block headless browsers. We use Xvfb for virtual display on servers.
-        """
-        self.playwright = await async_playwright().start()
-        
-        is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1"
-
-        browser_args = [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-blink-features=AutomationControlled",
-            "--disable-infobars",
-            "--disable-gpu",
-            "--disable-software-rasterizer",
-            "--single-process",
-        ]
-        
-        if is_apify:
-            browser_args.extend([
-                "--disable-extensions",
-                "--disable-background-networking",
-                "--disable-sync",
-                "--no-first-run",
-                "--no-zygote",
-            ])
-        else:
-            browser_args.append("--window-size=1920,1080")
-
-        self.browser = await self.playwright.chromium.launch(
-            headless=headless,
-            args=browser_args
-        )
-
-        self.context = await self.browser.new_context(
-            viewport={"width": 1920, "height": 1080},
-            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        )
-        self.page = await self.context.new_page()
-
-        if STEALTH_AVAILABLE:
+    async def _execute_with_retry(self, operation: callable, error_message: str, max_retries: int = 1):
+        for attempt in range(max_retries + 1):
             try:
-                stealth = Stealth()
-                await stealth.apply_stealth_async(self.page)
-            except Exception:
-                pass
-        await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
-        await asyncio.sleep(3)
+                return await operation()
+            except Exception as e:
+                if attempt == max_retries:
+                    self.logger.error(f"[{self.platform_name}] Error: {error_message} - {str(e)}")
+                    raise
 
-        await self._platform_init()
+                await asyncio.sleep(2)
+
+    async def initialize(self, headless: bool = False):
+        async def _init_impl():
+            self.playwright = await async_playwright().start()
+            
+            is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1"
+
+            browser_args = [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-blink-features=AutomationControlled",
+                "--disable-infobars",
+                "--disable-gpu",
+                "--disable-software-rasterizer",
+                "--single-process",
+            ]
+            
+            if is_apify:
+                browser_args.extend([
+                    "--disable-extensions",
+                    "--disable-background-networking",
+                    "--disable-sync",
+                    "--no-first-run",
+                    "--no-zygote",
+                ])
+            else:
+                browser_args.append("--window-size=1920,1080")
+
+            self.browser = await self.playwright.chromium.launch(
+                headless=headless,
+                args=browser_args
+            )
+
+            self.context = await self.browser.new_context(
+                viewport={"width": 1920, "height": 1080},
+                user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            )
+            self.page = await self.context.new_page()
+
+            if STEALTH_AVAILABLE:
+                try:
+                    stealth = Stealth()
+                    await stealth.apply_stealth_async(self.page)
+                except Exception:
+                    pass
+            await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
+
+            await self._platform_init()
+
+        await self._execute_with_retry(
+            _init_impl,
+            "Browser initialization failed"
+        )
 
     @abstractmethod
     async def _platform_init(self):
@@ -180,7 +192,7 @@ class BaseBrowserClient(ABC):
 
     async def query(self, prompt: str) -> BrowserQueryResult:
         """Send a prompt to the AI platform and get a response."""
-        try:
+        async def _query_impl():
             self._message_count += 1
             await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
             textbox = await self.page.query_selector(self.textbox_selector)
@@ -226,8 +238,12 @@ class BaseBrowserClient(ABC):
                 success=True
             )
 
-        except BrowserClientError:
-            raise
+        try:
+            return await self._execute_with_retry(
+                _query_impl,
+                f"Query failed for prompts: {prompt[:50]}...",
+                max_retries=1
+            )
         except Exception as e:
             return BrowserQueryResult(
                 platform=self.platform_name,
@@ -237,34 +253,9 @@ class BaseBrowserClient(ABC):
                 error=sanitize_error_message(e)
             )
 
-    async def query_with_retry(self, prompt: str, max_retries: int = 2) -> BrowserQueryResult:
-        """Query with retry on failure."""
-        last_error = None
-
-        for attempt in range(max_retries):
-            try:
-                result = await self.query(prompt)
-                if result.success:
-                    return result
-                last_error = result.error
-            except BrowserClientError as e:
-                last_error = e.message
-                if not e.recoverable:
-                    break
-            except Exception as e:
-                last_error = str(e)
-
-            if attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 2
-                await asyncio.sleep(wait_time)
-
-        return BrowserQueryResult(
-            platform=self.platform_name,
-            prompt=prompt,
-            response="",
-            success=False,
-            error=last_error or "Unknown error after retries",
-        )
+    async def query_with_retry(self, prompt: str, max_retries: int = 1) -> BrowserQueryResult:
+        """Wrapper for query (now handled internally by _execute_with_retry)."""
+        return await self.query(prompt)
 
     async def close(self):
         """Close browser and cleanup."""
