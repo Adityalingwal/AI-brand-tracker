@@ -196,13 +196,13 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
 
 ## 💰 Cost of Usage
 
-This Actor uses Pay-Per-Event pricing. You pay a flat fee per complete analysis, not for platform usage.
+This Actor uses Pay-Per-Event pricing. You pay a flat fee per complete analysis.
 
 | Event            | Price | What You Get                                       |
 | ---------------- | ----- | -------------------------------------------------- |
-| `brand-analysis` | $0.20 | Complete analysis across all platforms and prompts |
+| `brand-analysis` | $0.10 | Complete analysis across all platforms and prompts |
 
-**💡 Example:** Analyzing your brand across 3 AI platforms with 3 prompts costs $0.20 total.
+**💡 Example:** Analyzing your brand across 3 AI platforms with 3 prompts costs $0.10 total.
 
 ### Tier Discounts
 
@@ -210,10 +210,20 @@ Apify subscription members get discounts:
 
 | Plan           | Price per Analysis |
 | -------------- | ------------------ |
-| Free / Starter | $0.20              |
-| Bronze         | $0.18 (10% off)    |
-| Silver         | $0.15 (25% off)    |
-| Gold           | $0.12 (40% off)    |
+| Free / Starter | $0.10              |
+| Bronze         | $0.08 (20% off)    |
+| Silver         | $0.06 (40% off)    |
+| Gold           | $0.04 (60% off)    |
+
+### Compute Costs (Paid Separately to Apify)
+
+In addition to the analysis fee above, Apify charges for compute resources:
+
+- **Memory**: 4 GB recommended
+- **Typical run time**: 3-5 minutes
+- **Estimated compute cost**: ~$0.05 per run
+
+This compute cost is charged by Apify from your account.
 
 ---
 
@@ -264,4 +274,4 @@ If you encounter problems or have feature requests, please open an issue on the 
 - Competitive benchmarking across AI platforms
 - Plain English summaries for actionable insights
 - Custom prompt support
-- Pay-per-event pricing ($0.20 per complete analysis)
+- Pay-per-event pricing ($0.10 per complete analysis)
