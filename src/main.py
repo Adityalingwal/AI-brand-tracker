@@ -1,4 +1,4 @@
-"""AI Brand Tracker - Track brand visibility across AI platforms."""
+"""AI Brand Visibility - Track brand visibility across AI platforms."""
 
 import asyncio
 import os
@@ -112,7 +112,7 @@ async def main():
         execution_tracker = ExecutionTracker()
         started_at = datetime.now(timezone.utc)
 
-        logger.info("AI Brand Tracker - Starting")
+        logger.info("AI Brand Visibility - Starting")
 
         try:
             raw_input = await Actor.get_input() or {}

@@ -1,8 +1,8 @@
-# AI Brand Tracker
+# AI Brand Visibility
 
 Track how AI platforms like ChatGPT, Gemini, and Perplexity recommend your brand versus competitors. Get instant visibility into which brands dominate AI-generated recommendations in your industry — perfect for marketing teams, SEO specialists, and brand managers optimizing for the AI search era.
 
-## 🚀 Why Use AI Brand Tracker?
+## 🚀 Why Use AI Brand Visibility?
 
 As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and other AI platforms perceive your brand is critical. This Actor provides:
 
@@ -216,11 +216,6 @@ Yes! Schedule recurring runs in Apify Console to track how your brand visibility
 | Response variability  | AI responses can vary between runs for the same prompt        |
 | Platform availability | Occasional downtime on AI platforms may affect results        |
 
----
-
-## 💬 Questions or Issues?
-
-If you encounter problems or have feature requests, please open an issue on the [Issues tab](https://apify.com/your-username/ai-brand-tracker/issues) of the Actor's page in the Apify Store.
 
 ---
 

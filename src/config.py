@@ -1,4 +1,4 @@
-"""Configuration dataclasses for AI Brand Tracker."""
+"""Configuration dataclasses for AI Brand Visibility."""
 
 from dataclasses import dataclass, field
 from enum import Enum

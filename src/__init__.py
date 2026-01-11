@@ -1,1 +1,1 @@
-"""AI Brand Tracker - Track brand visibility across AI platforms."""
+"""AI Brand Visibility - Track brand visibility across AI platforms."""

@@ -1,4 +1,4 @@
-"""Entry point for the AI Brand Tracker actor."""
+"""Entry point for the AI Brand Visibility actor."""
 
 import asyncio
 from .main import main

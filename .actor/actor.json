@@ -1,7 +1,7 @@
 {
   "actorSpecification": 1,
   "name": "ai-brand-tracker",
-  "title": "AI Brand Tracker",
+  "title": "AI Brand Visibility",
   "description": "Track your brand's visibility across AI platforms (ChatGPT, Gemini, Perplexity). Analyze mentions, citations, and competitive positioning.",
   "version": "1.0",
   "buildTag": "latest",
