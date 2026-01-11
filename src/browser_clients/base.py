@@ -80,6 +80,8 @@ class BaseBrowserClient(ABC):
         if headless is None:
             headless = is_apify
         
+        self.logger.info(f"[{self.platform_name}] Browser config: headless={headless}, apify={is_apify}")
+        
         self.playwright = await async_playwright().start()
 
         # Browser args - more permissive on Apify

@@ -32,19 +32,25 @@ async def query_platform(platform: Platform, prompts: list[str], logger, executi
     client = create_browser_client(platform, logger)
     
     if not client:
+        logger.warning(f"[{platform.value}] No client available - skipping")
         return responses
+    
+    logger.info(f"[{platform.value}] Initializing browser...")
     
     try:
         await client.initialize()
+        logger.info(f"[{platform.value}] Browser ready - querying {len(prompts)} prompt(s)")
         
         for i, prompt_text in enumerate(prompts):
             prompt_id = f"{platform.value}_{i:03d}"
+            logger.info(f"[{platform.value}] Querying prompt {i+1}/{len(prompts)}...")
             
             try:
                 result = await client.query_with_retry(prompt_text, max_retries=2)
                 
                 if result.success:
                     execution_tracker.add_success(f"{platform.value}:{prompt_id}", {})
+                    logger.info(f"[{platform.value}] ✓ Prompt {i+1} succeeded ({len(result.response)} chars)")
                     responses.append({
                         "prompt_id": prompt_id,
                         "prompt_text": prompt_text,
@@ -54,6 +60,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, executi
                     })
                 else:
                     execution_tracker.add_error("query_failed", result.error or "Unknown", context=prompt_id)
+                    logger.warning(f"[{platform.value}] ✗ Prompt {i+1} failed: {result.error}")
                     responses.append({
                         "prompt_id": prompt_id,
                         "prompt_text": prompt_text,
@@ -66,6 +73,7 @@ async def query_platform(platform: Platform, prompts: list[str], logger, executi
             except Exception as e:
                 _error_msg = sanitize_error_message(e)
                 execution_tracker.add_error("query_exception", _error_msg, context=prompt_id)
+                logger.error(f"[{platform.value}] ✗ Prompt {i+1} exception: {_error_msg}")
                 responses.append({
                     "prompt_id": prompt_id,
                     "prompt_text": prompt_text[:200],
@@ -75,9 +83,12 @@ async def query_platform(platform: Platform, prompts: list[str], logger, executi
                     "error": _error_msg,
                 })
         
+        success_count = sum(1 for r in responses if r.get("success"))
+        logger.info(f"[{platform.value}] Completed: {success_count}/{len(prompts)} prompts succeeded")
+        
     except Exception as e:
         _error_msg = sanitize_error_message(e)
-        logger.error(f"[{platform.value}] Failed: {_error_msg}")
+        logger.error(f"[{platform.value}] ✗ Browser initialization failed: {_error_msg}")
         execution_tracker.add_error("platform_failed", _error_msg, context=platform.value)
     finally:
         try:

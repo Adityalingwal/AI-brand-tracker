@@ -3,23 +3,17 @@
   "title": "AI Brand Visibility Analysis",
   "description": "Consolidated brand tracking results showing performance across AI platforms",
   "views": {
-    "summary": {
+    "overview": {
       "title": "Brand Performance Summary",
       "transformation": {
-        "fields": [
-          "summary.myBrand",
-          "summary.competitors",
-          "executionMetadata.totalResponses",
-          "executionMetadata.durationMs"
-        ]
+        "flatten": ["summary"]
       },
       "display": {
         "component": "table",
         "properties": {
+          "summary.category": { "label": "Category" },
           "summary.myBrand": { "label": "Your Brand" },
-          "summary.competitors": { "label": "Competitors" },
-          "executionMetadata.totalResponses": { "label": "Responses Analyzed" },
-          "executionMetadata.durationMs": { "label": "Duration (ms)" }
+          "summary.competitors": { "label": "Competitors" }
         }
       }
     }
