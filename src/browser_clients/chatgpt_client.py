@@ -70,7 +70,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         await self._dismiss_login_popup()
 
     async def _get_response_text(self) -> str:
-        """Extract the last assistant response from the page."""
         try:
             articles = await self.page.query_selector_all("article")
 
@@ -84,3 +83,4 @@ class ChatGPTBrowserClient(BaseBrowserClient):
 
         except Exception:
             return ""
+

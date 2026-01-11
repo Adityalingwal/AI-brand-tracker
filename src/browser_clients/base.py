@@ -139,8 +139,7 @@ class BaseBrowserClient(ABC):
         """Handle any popups that appear after page refresh. Override if needed."""
         pass
 
-    async def _wait_for_response_complete(self, timeout_seconds: int = 120) -> bool:
-        """Wait for response to complete using polling. Override if platform needs custom logic."""
+    async def _wait_for_response_complete(self, timeout_seconds: int = 120, old_content: str = "") -> bool:
         check_interval = 1.5
         initial_wait_time = 30
         max_checks = int(initial_wait_time / check_interval)
@@ -153,10 +152,10 @@ class BaseBrowserClient(ABC):
             except Exception:
                 return False
 
-            if current_content:
+            if current_content and current_content != old_content:
                 break
 
-        if not current_content:
+        if not current_content or current_content == old_content:
             return False
 
         last_content = current_content
@@ -168,7 +167,7 @@ class BaseBrowserClient(ABC):
             try:
                 current_content = await self._get_response_text()
             except Exception:
-                return len(last_content) > 0
+                return len(last_content) > 0 and last_content != old_content
 
             if current_content == last_content:
                 stable_count += 1
@@ -178,17 +177,12 @@ class BaseBrowserClient(ABC):
                 stable_count = 0
                 last_content = current_content
 
+
     async def query(self, prompt: str) -> BrowserQueryResult:
         """Send a prompt to the AI platform and get a response."""
         try:
             self._message_count += 1
-
-            if self._message_count > 1:
-                await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=30000)
-                await asyncio.sleep(3)
-                await self._handle_popups_after_refresh()
-
-            await self.page.wait_for_selector(self.textbox_selector, timeout=10000)
+            await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
             textbox = await self.page.query_selector(self.textbox_selector)
 
             if not textbox:
@@ -198,6 +192,8 @@ class BaseBrowserClient(ABC):
                     recoverable=True
                 )
 
+            old_response = await self._get_response_text()
+
             await textbox.click()
             await asyncio.sleep(0.5)
 
@@ -206,17 +202,20 @@ class BaseBrowserClient(ABC):
 
             await self.page.keyboard.press("Enter")
 
-            response_complete = await self._wait_for_response_complete(timeout_seconds=90)
+            response_complete = await self._wait_for_response_complete(
+                timeout_seconds=90,
+                old_content=old_response
+            )
 
             response_text = await self._get_response_text()
 
-            if not response_text:
+            if not response_text or response_text == old_response:
                 return BrowserQueryResult(
                     platform=self.platform_name,
                     prompt=prompt,
                     response="",
                     success=False,
-                    error=f"No response received from {self.platform_name}"
+                    error=f"No new response received from {self.platform_name}"
                 )
             await asyncio.sleep(2)
 
