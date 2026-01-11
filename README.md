@@ -72,16 +72,16 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
     "brand": "Salesforce",
     "platformPerformance": {
       "chatgpt": {
-        "summary": "Salesforce maintains strong enterprise positioning on ChatGPT with 5 mentions across 2 of 3 prompts — ranking #2 behind HubSpot's dominant 7 mentions. The platform consistently positions Salesforce as the sophisticated, full-featured leader for complex enterprise needs, but notably absent from small business recommendations where affordability-focused alternatives dominate.",
-        "promptsMentionSummary": "Strong presence in enterprise comparison and automation feature queries where Salesforce is positioned as the industry leader. **Critical visibility gap**: Completely absent from small business CRM recommendations — a high-volume search dominated by HubSpot, Zoho, and Pipedrive."
+        "summary": "Salesforce maintains strong enterprise positioning with 5 mentions across 2 of 3 prompts — ranking #2 behind HubSpot. Positioned as the sophisticated leader for complex enterprise needs, but absent from small business recommendations.",
+        "promptsMentionSummary": "Strong in enterprise and automation queries. **Visibility gap**: Missing from small business recommendations dominated by HubSpot and Zoho."
       },
       "gemini": {
-        "summary": "Salesforce achieves commanding visibility on Gemini with 7 mentions across all 3 prompts — ranking #1 ahead of HubSpot (5 mentions) and Pipedrive (3 mentions). Gemini consistently features Salesforce as the comprehensive enterprise solution with advanced AI capabilities through Einstein.",
-        "promptsMentionSummary": "Mentioned in all prompts with particularly strong positioning in automation and enterprise comparison queries. Gemini emphasizes Salesforce's customization depth, AppExchange ecosystem, and AI-powered forecasting as key differentiators."
+        "summary": "Commanding visibility with 7 mentions across all 3 prompts — ranking #1. Featured as the comprehensive enterprise solution with advanced AI capabilities.",
+        "promptsMentionSummary": "Mentioned in all prompts with emphasis on customization depth and Einstein AI forecasting."
       },
       "perplexity": {
-        "summary": "Salesforce maintains selective but authoritative visibility on Perplexity, appearing in 2 of 3 prompts with 5 total mentions — ranking #2 overall behind HubSpot's 6 mentions. Perplexity positions Salesforce as the enterprise-grade solution for complex, large-scale operations requiring advanced customization.",
-        "promptsMentionSummary": "Featured prominently in enterprise comparison and automation queries. **Visibility gap**: Absent from small business recommendations where Perplexity prioritizes affordability-focused alternatives like Zoho and Freshsales."
+        "summary": "Selective but authoritative visibility with 5 mentions across 2 of 3 prompts — ranking #2. Positioned as enterprise-grade for complex operations.",
+        "promptsMentionSummary": "Featured in enterprise and automation queries. Absent from small business recommendations."
       }
     }
   },
@@ -90,32 +90,27 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
     "HubSpot": {
       "platformPerformance": {
         "chatgpt": {
-          "summary": "HubSpot dominates ChatGPT with commanding visibility across all 3 queries and 7 total mentions — establishing clear #1 ranking ahead of Salesforce (5 mentions) and Pipedrive (3 mentions). ChatGPT consistently features HubSpot as the leading recommendation for small businesses and as a credible enterprise alternative.",
-          "promptsMentionSummary": "Complete coverage across all query types with no visibility gaps. Particularly dominant in small business recommendations (featured first and prominently) and automation features (praised for intuitive workflows and free tier)."
+          "summary": "Dominates with 7 mentions across all prompts — #1 ranking. Featured as leading SMB recommendation and credible enterprise alternative.",
+          "promptsMentionSummary": "Complete coverage with no visibility gaps. Dominant in small business and automation queries."
         },
         "gemini": {
-          "summary": "HubSpot achieves strong visibility on Gemini with 5 mentions across all 3 prompts — ranking #2 behind Salesforce (7 mentions). Gemini positions HubSpot as the accessible alternative with excellent ease-of-use, though it acknowledges limitations for complex enterprise needs.",
-          "promptsMentionSummary": "Consistent mentions across all prompts with emphasis on HubSpot's free tier, marketing integration, and user-friendly interface. Positioned as ideal for SMBs and growing businesses."
+          "summary": "5 mentions, #2 ranking. Positioned as accessible alternative with excellent ease-of-use."
         },
         "perplexity": {
-          "summary": "HubSpot leads on Perplexity with 6 total mentions across all 3 prompts — ranking #1 ahead of Salesforce (5 mentions) and Pipedrive (3 mentions). The platform consistently positions HubSpot as the go-to recommendation for businesses seeking balance between features and accessibility.",
-          "promptsMentionSummary": "Dominant in small business recommendations and automation queries. Featured as the accessible alternative to Salesforce in enterprise comparisons, capturing 'better value for smaller teams' positioning."
+          "summary": "6 mentions, #1 ranking. Go-to recommendation for feature-accessibility balance."
         }
       }
     },
     "Pipedrive": {
       "platformPerformance": {
         "chatgpt": {
-          "summary": "Pipedrive achieves focused visibility on ChatGPT, appearing in 2 of 3 prompts with 3 total mentions — ranking #3 behind HubSpot and Salesforce. Positioned as an affordable, sales-pipeline-focused alternative for small teams.",
-          "promptsMentionSummary": "Mentioned in small business recommendations and automation queries as a cost-effective option with visual pipeline management. **Absent from enterprise comparison query** — limiting perception as an enterprise-grade competitor."
+          "summary": "3 mentions, #3 ranking. Affordable, pipeline-focused alternative for small teams."
         },
         "gemini": {
-          "summary": "Pipedrive shows modest visibility on Gemini with 3 mentions across 2 of 3 prompts — ranking #3. Gemini emphasizes Pipedrive's pipeline-focused approach and competitive pricing for sales teams.",
-          "promptsMentionSummary": "Featured in small business and automation queries with focus on visual pipelines and email automation. Missing from enterprise comparison discussions."
+          "summary": "3 mentions, #3 ranking. Emphasized for visual pipelines and competitive pricing."
         },
         "perplexity": {
-          "summary": "Pipedrive achieves targeted visibility on Perplexity with 3 mentions across 2 of 3 prompts — ranking #3 well behind HubSpot (6) and Salesforce (5). Perplexity positions Pipedrive as an affordable, sales-focused alternative.",
-          "promptsMentionSummary": "Appears in small business recommendations and automation features queries as a cost-effective, pipeline-focused option. Absent from enterprise comparison query."
+          "summary": "3 mentions, #3 ranking. Cost-effective, sales-focused option."
         }
       }
     }
@@ -127,29 +122,13 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
       "prompts": [
         {
           "promptText": "What are the best CRM tools for small businesses?",
-          "response": "For small businesses, the best CRM options include HubSpot CRM (free tier with robust features), Zoho CRM (affordable at $14/user/month with excellent customization), and Pipedrive (visual pipeline management starting at $14/user/month). These tools prioritize ease of use, affordability, and essential features like contact management and sales automation...",
-          "allBrandsMentioned": [
-            "HubSpot",
-            "Zoho",
-            "Pipedrive",
-            "Freshsales",
-            "Agile CRM"
-          ]
+          "response": "HubSpot CRM, Zoho CRM, and Pipedrive stand out for small businesses due to affordability and ease of use...",
+          "allBrandsMentioned": ["HubSpot", "Zoho", "Pipedrive", "Freshsales"]
         },
         {
           "promptText": "Compare enterprise CRM solutions",
-          "response": "Salesforce excels for enterprise sales teams handling complex, large-scale operations with features like Einstein AI, advanced forecasting, and deep customization through AppExchange. HubSpot Enterprise offers a more accessible alternative with simpler implementation but may lack depth for multi-region complexity...",
-          "allBrandsMentioned": [
-            "Salesforce",
-            "HubSpot",
-            "Microsoft Dynamics",
-            "Oracle"
-          ]
-        },
-        {
-          "promptText": "Which CRM has the best automation features?",
-          "response": "HubSpot CRM stands out for intuitive automation with email sequences, lead routing, and deal stage workflows. Salesforce provides enterprise-level automation with Einstein AI for lead scoring and predictive analytics. For budget-conscious teams, Zoho CRM offers Zia AI for predictions and workflow automation at lower cost...",
-          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho", "Freshsales"]
+          "response": "Salesforce excels for enterprise teams with Einstein AI, advanced forecasting, and AppExchange ecosystem...",
+          "allBrandsMentioned": ["Salesforce", "HubSpot", "Microsoft Dynamics"]
         }
       ]
     },
@@ -158,29 +137,8 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
       "prompts": [
         {
           "promptText": "What are the best CRM tools for small businesses?",
-          "response": "Top CRM solutions for small businesses include HubSpot (excellent free tier), Salesforce Essentials (scaled-down enterprise features), and Zoho CRM (best value for customization). Each offers contact management, pipeline tracking, and integrations with popular business tools...",
-          "allBrandsMentioned": [
-            "HubSpot",
-            "Salesforce",
-            "Zoho",
-            "Pipedrive",
-            "Freshsales"
-          ]
-        },
-        {
-          "promptText": "Compare enterprise CRM solutions",
-          "response": "Salesforce remains the market leader for enterprise CRM with unmatched customization, Einstein AI capabilities, and the largest ecosystem of integrations. HubSpot has emerged as a viable alternative for companies seeking faster implementation with strong marketing alignment...",
-          "allBrandsMentioned": [
-            "Salesforce",
-            "HubSpot",
-            "Microsoft Dynamics",
-            "SAP"
-          ]
-        },
-        {
-          "promptText": "Which CRM has the best automation features?",
-          "response": "Salesforce leads in enterprise automation with Einstein AI powering lead scoring, forecasting, and workflow automation. HubSpot excels in marketing-sales alignment with intuitive sequences. Pipedrive offers strong pipeline automation with visual workflows...",
-          "allBrandsMentioned": ["Salesforce", "HubSpot", "Pipedrive", "Zoho"]
+          "response": "Top options include HubSpot (excellent free tier), Salesforce Essentials, and Zoho CRM...",
+          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho", "Pipedrive"]
         }
       ]
     },
@@ -188,25 +146,9 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
       "platform": "perplexity",
       "prompts": [
         {
-          "promptText": "What are the best CRM tools for small businesses?",
-          "response": "HubSpot CRM, Zoho CRM, and Pipedrive stand out as top CRM options for small businesses due to their affordability, ease of use, and essential features. HubSpot offers a robust free tier, Zoho excels in customization, and Pipedrive focuses on visual pipeline management...",
-          "allBrandsMentioned": [
-            "HubSpot",
-            "Zoho",
-            "Pipedrive",
-            "Freshsales",
-            "Less Annoying CRM"
-          ]
-        },
-        {
-          "promptText": "Compare enterprise CRM solutions",
-          "response": "Salesforce excels over HubSpot for enterprise sales teams handling complex operations. Salesforce offers highly customizable pipelines, territory management, and Einstein AI for predictions. HubSpot suits smaller or faster-moving teams but lacks depth for intricate enterprise needs...",
-          "allBrandsMentioned": ["Salesforce", "HubSpot"]
-        },
-        {
           "promptText": "Which CRM has the best automation features?",
-          "response": "HubSpot CRM stands out for intuitive automation tailored to sales and marketing workflows. Salesforce excels in enterprise-level customization with Einstein AI. Zoho CRM features Zia AI for predictions and multi-channel automation at lower cost...",
-          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho", "Freshsales"]
+          "response": "HubSpot stands out for intuitive automation. Salesforce excels in enterprise-level AI-powered workflows...",
+          "allBrandsMentioned": ["HubSpot", "Salesforce", "Zoho"]
         }
       ]
     }
