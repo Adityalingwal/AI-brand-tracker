@@ -72,14 +72,13 @@ class BrandAnalyzer:
 
             try:
                 clean_text = result_text.strip()
-                if clean_text.startswith("```json"):
-                    clean_text = clean_text[7:]
-                if clean_text.startswith("```"):
-                    clean_text = clean_text[3:]
-                if clean_text.endswith("```"):
-                    clean_text = clean_text[:-3]
-                clean_text = clean_text.strip()
+                
+                start_idx = clean_text.find('{')
+                end_idx = clean_text.rfind('}')
 
+                if start_idx != -1 and end_idx != -1:
+                    clean_text = clean_text[start_idx : end_idx + 1]
+                
                 output = json.loads(clean_text)
 
                 if "summary" in output:
@@ -88,8 +87,11 @@ class BrandAnalyzer:
                 self.logger.info("Analysis complete")
                 return output
 
-            except json.JSONDecodeError:
-                self.logger.error("Analysis failed - invalid response format")
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Analysis failed - invalid response format: {str(e)}")
+                # Log a snippet of the failed text for debugging
+                snippet = result_text[:500] if result_text else "Empty response"
+                self.logger.error(f"Failed JSON snippet: {snippet}...")
                 return None
 
         except Exception:
