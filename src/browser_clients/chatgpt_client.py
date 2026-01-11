@@ -69,6 +69,14 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         """Handle popups that appear after page refresh."""
         await self._dismiss_login_popup()
 
+    async def _get_message_count(self) -> int:
+        """Count the number of conversation turns."""
+        try:
+            articles = await self.page.query_selector_all("article[data-testid^='conversation-turn']")
+            return len(articles)
+        except Exception:
+            return 0
+
     async def _get_response_text(self) -> str:
         try:
             articles = await self.page.query_selector_all("article[data-testid^='conversation-turn']")

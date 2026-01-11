@@ -49,6 +49,14 @@ class PerplexityBrowserClient(BaseBrowserClient):
                 recoverable=False
             )
 
+    async def _get_message_count(self) -> int:
+        """Count the number of markdown response blocks."""
+        try:
+            elems = await self.page.query_selector_all("[id^='markdown-content']")
+            return len(elems)
+        except Exception:
+            return 0
+
     async def _get_response_text(self) -> str:
         try:
             markdown_elems = await self.page.query_selector_all("[id^='markdown-content']")

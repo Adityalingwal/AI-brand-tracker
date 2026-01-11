@@ -57,6 +57,15 @@ class GeminiBrowserClient(BaseBrowserClient):
                 recoverable=False
             )
 
+    async def _get_message_count(self) -> int:
+        """Count the number of model responses."""
+        try:
+            # Primary selector for conversation turns
+            responses = await self.page.query_selector_all("model-response")
+            return len(responses)
+        except Exception:
+            return 0
+
     async def _get_response_text(self) -> str:
         """Extract response text with fallback selectors."""
         try:

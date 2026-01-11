@@ -143,6 +143,11 @@ class BaseBrowserClient(ABC):
         pass
 
     @abstractmethod
+    async def _get_message_count(self) -> int:
+        """Get the number of message bubbles in the conversation. Use for detecting new responses."""
+        pass
+
+    @abstractmethod
     async def _get_response_text(self) -> str:
         """Extract the response text from the page. Platform-specific."""
         pass
@@ -151,43 +156,46 @@ class BaseBrowserClient(ABC):
         """Handle any popups that appear after page refresh. Override if needed."""
         pass
 
-    async def _wait_for_response_complete(self, timeout_seconds: int = 120, old_content: str = "") -> bool:
-        check_interval = 1.5
-        initial_wait_time = 30
-        max_checks = int(initial_wait_time / check_interval)
+    async def _wait_for_new_message(self, old_count: int, timeout_seconds: int = 120) -> bool:
+        """Wait for the message count to increase."""
+        check_interval = 1.0
+        max_checks = int(timeout_seconds / check_interval)
 
-        current_content = ""
         for _ in range(max_checks):
             await asyncio.sleep(check_interval)
             try:
-                current_content = await self._get_response_text()
+                current_count = await self._get_message_count()
+                if current_count > old_count:
+                    return True
             except Exception:
-                return False
+                pass
+        return False
 
-            if current_content and current_content != old_content:
-                break
-
-        if not current_content or current_content == old_content:
-            return False
-
-        last_content = current_content
+    async def _wait_for_response_complete(self, timeout_seconds: int = 120, old_content: str = "") -> bool:
+        # This is now used only for checking text stability AFTER count has increased
+        check_interval = 1.5
+        
+        last_content = ""
         stable_count = 0
         required_stable = 3
 
-        while True:
-            await asyncio.sleep(check_interval)
-            try:
-                current_content = await self._get_response_text()
-            except Exception:
-                return len(last_content) > 0 and last_content != old_content
+        # We assume count has already increased, so we just wait for text to be stable (not streaming)
+        for _ in range(int(timeout_seconds / check_interval)):
+             await asyncio.sleep(check_interval)
+             try:
+                 current_content = await self._get_response_text()
+             except Exception:
+                 continue
 
-            if current_content == last_content:
-                stable_count += 1
-                if stable_count >= required_stable:
-                    return True
-            else:
-                stable_count = 0
-                last_content = current_content
+             if current_content and current_content == last_content and len(current_content) > 10:
+                 stable_count += 1
+                 if stable_count >= required_stable:
+                     return True
+             else:
+                 stable_count = 0
+                 last_content = current_content
+        
+        return False
 
 
     async def query(self, prompt: str) -> BrowserQueryResult:
@@ -204,7 +212,8 @@ class BaseBrowserClient(ABC):
                     recoverable=True
                 )
 
-            old_response = await self._get_response_text()
+            # Capture old state
+            old_count = await self._get_message_count()
 
             await textbox.click()
             await asyncio.sleep(0.5)
@@ -214,20 +223,30 @@ class BaseBrowserClient(ABC):
 
             await self.page.keyboard.press("Enter")
 
-            response_complete = await self._wait_for_response_complete(
-                timeout_seconds=90,
-                old_content=old_response
-            )
+            # 1. Wait for new message bubble to appear
+            new_message_appeared = await self._wait_for_new_message(old_count, timeout_seconds=60)
+            
+            if not new_message_appeared:
+                 return BrowserQueryResult(
+                    platform=self.platform_name,
+                    prompt=prompt,
+                    response="",
+                    success=False,
+                    error=f"No new response received from {self.platform_name} (count did not increase)"
+                )
+
+            # 2. Wait for text to finish streaming/stabilize
+            await self._wait_for_response_complete(timeout_seconds=90)
 
             response_text = await self._get_response_text()
 
-            if not response_text or response_text == old_response:
+            if not response_text:
                 return BrowserQueryResult(
                     platform=self.platform_name,
                     prompt=prompt,
                     response="",
                     success=False,
-                    error=f"No new response received from {self.platform_name}"
+                    error=f"Empty response received from {self.platform_name}"
                 )
             await asyncio.sleep(2)
 
