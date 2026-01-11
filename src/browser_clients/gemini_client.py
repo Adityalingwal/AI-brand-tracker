@@ -24,7 +24,6 @@ class GeminiBrowserClient(BaseBrowserClient):
         """Handle Gemini-specific initialization."""
         await asyncio.sleep(3)
 
-        # Handle cookie consent if present
         cookie_selectors = [
             "button:has-text('Accept all')",
             "button:has-text('I agree')",
@@ -42,7 +41,6 @@ class GeminiBrowserClient(BaseBrowserClient):
             except Exception:
                 pass
 
-        # Handle "Try Gemini" or similar buttons
         try:
             try_btn = await self.page.query_selector("button:has-text('Try Gemini')")
             if try_btn:
@@ -52,7 +50,6 @@ class GeminiBrowserClient(BaseBrowserClient):
         except Exception:
             pass
 
-        # Wait for the input field to be ready
         try:
             await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
             self.logger.info("  Gemini ready")
@@ -64,25 +61,21 @@ class GeminiBrowserClient(BaseBrowserClient):
             )
 
     async def _get_response_text(self) -> str:
-        """Get the text from Gemini's response."""
+        """Extract response text with fallback selectors."""
         try:
-            # Try to get all model-response elements
             responses = await self.page.query_selector_all("model-response")
 
             if responses:
-                # Get the last response (most recent)
                 last_response = responses[-1]
                 text = await last_response.inner_text()
                 if text and text.strip():
                     return text.strip()
 
-            # Fallback: Try structured-content-container
             content = await self.page.query_selector("structured-content-container")
             if content:
                 text = await content.inner_text()
                 return text.strip() if text else ""
 
-            # Fallback: Try presented-response-container
             container = await self.page.query_selector(".presented-response-container")
             if container:
                 text = await container.inner_text()

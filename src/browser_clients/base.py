@@ -79,7 +79,6 @@ class BaseBrowserClient(ABC):
 
         self.playwright = await async_playwright().start()
 
-        # Launch browser with anti-detection args
         self.browser = await self.playwright.chromium.launch(
             headless=headless,
             args=[
@@ -98,7 +97,6 @@ class BaseBrowserClient(ABC):
         )
         self.page = await self.context.new_page()
 
-        # Apply stealth patches to avoid detection
         try:
             from playwright_stealth import Stealth
             stealth = Stealth()
@@ -107,12 +105,10 @@ class BaseBrowserClient(ABC):
         except Exception as e:
             self.logger.warning(f"  Stealth patches skipped: {e}")
 
-        # Navigate to platform
         self.logger.info(f"  Navigating to {self.base_url}...")
         await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
         await asyncio.sleep(3)
 
-        # Platform-specific initialization (handle cookie banners, etc.)
         await self._platform_init()
 
     @abstractmethod
@@ -157,13 +153,11 @@ class BaseBrowserClient(ABC):
             self._message_count += 1
             self.logger.info(f"  {self.platform_name} query #{self._message_count}: {prompt[:50]}...")
 
-            # Refresh for subsequent queries to avoid context pollution
             if self._message_count > 1:
                 await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=30000)
                 await asyncio.sleep(3)
                 await self._handle_popups_after_refresh()
 
-            # Wait for and click textbox
             await self.page.wait_for_selector(self.textbox_selector, timeout=10000)
             textbox = await self.page.query_selector(self.textbox_selector)
 
@@ -177,21 +171,17 @@ class BaseBrowserClient(ABC):
             await textbox.click()
             await asyncio.sleep(0.5)
 
-            # Type prompt with human-like delays
             await self._human_type(prompt)
             await asyncio.sleep(0.5)
 
-            # Send the prompt
             await self.page.keyboard.press("Enter")
 
-            # Wait for response to complete
             self.logger.info("  Waiting for response...")
             response_complete = await self._wait_for_response_complete(timeout_seconds=90)
 
             if not response_complete:
                 self.logger.warning("  Response may be incomplete (timeout)")
 
-            # Extract response
             response_text = await self._get_response_text()
 
             if not response_text:

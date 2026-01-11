@@ -18,13 +18,10 @@ class BrandAnalyzer:
         self.api_key = api_key
         self.logger = logger
 
-        # Initialize Anthropic client
         from anthropic import AsyncAnthropic
         self.client = AsyncAnthropic(api_key=api_key)
         self.model = "claude-haiku-4-5-20251001"
-
-        # Extended thinking disabled for faster response
-        self.use_extended_thinking = False
+        self.use_extended_thinking = True
         self.thinking_budget_tokens = 3000
 
     def _build_analysis_prompt(
@@ -44,7 +41,6 @@ class BrandAnalyzer:
         Returns:
             Formatted prompt string
         """
-        # Group responses by platform
         platform_data = {}
         for resp in platform_responses:
             platform = resp["platform"]
@@ -190,7 +186,6 @@ Generate the analysis now:"""
 
             self.logger.info(f"[Analyzer] Analyzing {len(platform_responses)} responses...")
 
-            # Prepare API call parameters
             api_params = {
                 "model": self.model,
                 "max_tokens": 12000,
@@ -202,7 +197,6 @@ Generate the analysis now:"""
                 ]
             }
 
-            # Add extended thinking if enabled
             if self.use_extended_thinking:
                 api_params["thinking"] = {
                     "type": "enabled",
@@ -210,10 +204,8 @@ Generate the analysis now:"""
                 }
                 self.logger.info(f"[Analyzer] Extended thinking enabled")
 
-            # Make API call
             response = await self.client.messages.create(**api_params)
 
-            # Extract text from response
             result_text = ""
             for block in response.content:
                 if block.type == "thinking":
@@ -221,7 +213,6 @@ Generate the analysis now:"""
                 elif block.type == "text":
                     result_text += block.text
 
-            # Parse JSON
             try:
                 clean_text = result_text.strip()
                 if clean_text.startswith("```json"):
@@ -234,7 +225,6 @@ Generate the analysis now:"""
 
                 output = json.loads(clean_text)
 
-                # Add category to summary
                 if "summary" in output:
                     output["summary"]["category"] = category
 

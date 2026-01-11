@@ -24,7 +24,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         """Handle ChatGPT-specific initialization."""
         await asyncio.sleep(3)
 
-        # Handle Cloudflare challenge if present
         try:
             cloudflare = await self.page.query_selector("text='Verify you are human'")
             if cloudflare:
@@ -36,7 +35,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         except Exception:
             pass
 
-        # Handle cookie consent
         try:
             cookie_btn = await self.page.query_selector("button:has-text('Accept all')")
             if cookie_btn:
@@ -46,10 +44,8 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         except Exception:
             pass
 
-        # Handle "Stay logged out" or "Maybe later" popup
         await self._dismiss_login_popup()
 
-        # Wait for textbox to be ready
         try:
             await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
             self.logger.info("  ChatGPT ready")
@@ -78,15 +74,13 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         await self._dismiss_login_popup()
 
     async def _get_response_text(self) -> str:
-        """Get the text from the last assistant response."""
+        """Extract the last assistant response from the page."""
         try:
-            # Get all article elements - first is user query, last is response
             articles = await self.page.query_selector_all("article")
 
             if len(articles) < 2:
                 return ""
 
-            # Last article is the response
             last_article = articles[-1]
             text = await last_article.inner_text()
 

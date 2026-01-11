@@ -24,7 +24,6 @@ class PerplexityBrowserClient(BaseBrowserClient):
         """Handle Perplexity-specific initialization."""
         await asyncio.sleep(3)
 
-        # Handle any cookie/popup banners
         popup_selectors = [
             "button:has-text('Accept')",
             "button:has-text('Got it')",
@@ -42,7 +41,6 @@ class PerplexityBrowserClient(BaseBrowserClient):
             except Exception:
                 pass
 
-        # Wait for textbox to be ready
         try:
             await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
             self.logger.info("  Perplexity ready")
@@ -54,22 +52,19 @@ class PerplexityBrowserClient(BaseBrowserClient):
             )
 
     async def _get_response_text(self) -> str:
-        """Get the text from Perplexity's response."""
+        """Extract response text with fallback selectors."""
         try:
-            # Try the specific response content selector first
             response_elem = await self.page.query_selector("#markdown-content-0 > div > div > div")
             if response_elem:
                 text = await response_elem.inner_text()
                 if text and text.strip():
                     return text.strip()
 
-            # Fallback to parent container
             response_elem = await self.page.query_selector("#markdown-content-0")
             if response_elem:
                 text = await response_elem.inner_text()
                 return text.strip() if text else ""
 
-            # Fallback: look for any markdown content
             markdown_elems = await self.page.query_selector_all("[id^='markdown-content']")
             if markdown_elems:
                 last_elem = markdown_elems[-1]

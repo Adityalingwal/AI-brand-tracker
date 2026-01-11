@@ -105,11 +105,9 @@ async def main():
         logger.info("AI Brand Tracker - Starting")
 
         try:
-            # Parse input
             raw_input = await Actor.get_input() or {}
             actor_input = ActorInput.from_raw_input(raw_input)
 
-            # Validate
             validation_errors = validate_input(actor_input)
             if validation_errors:
                 for error in validation_errors:
@@ -126,10 +124,8 @@ async def main():
             logger.info(f"Platforms: {[p.value for p in actor_input.platforms]}")
             logger.info(f"Prompts: {len(actor_input.prompts)}")
 
-            # Use prompts from input
             all_prompts = actor_input.prompts
 
-            # Query all platforms in parallel
             logger.info(f"Querying {len(actor_input.platforms)} platform(s)...")
             
             tasks = [
@@ -146,7 +142,6 @@ async def main():
 
             logger.info(f"Collected {len(all_responses)} responses")
 
-            # Get valid responses only
             valid_responses = [r for r in all_responses if r["success"] and r["response"]]
 
             if not valid_responses:
@@ -157,7 +152,6 @@ async def main():
                 })
                 return
 
-            # Analyze all responses with consolidated analyzer (SINGLE API CALL)
             analysis_key = get_analysis_api_key()
 
             if not analysis_key:
@@ -170,7 +164,6 @@ async def main():
 
             analyzer = BrandAnalyzer(analysis_key, logger)
 
-            # Prepare responses for analysis
             platform_responses = [
                 {
                     "platform": resp["platform"],
@@ -180,7 +173,6 @@ async def main():
                 for resp in valid_responses
             ]
 
-            # Single LLM call to analyze everything
             output = await analyzer.analyze_all_responses(
                 my_brand=actor_input.my_brand,
                 competitors=actor_input.competitors,
@@ -196,7 +188,6 @@ async def main():
                 })
                 return
 
-            # Add execution metadata
             completed_at = datetime.now(timezone.utc)
             duration_ms = int((completed_at - started_at).total_seconds() * 1000)
 
@@ -208,10 +199,8 @@ async def main():
                 "platformsQueried": [p.value for p in actor_input.platforms],
             }
 
-            # Push single consolidated output
             await Actor.push_data(output)
 
-            # Charge for events (per prompt analyzed)
             events_charged = len(valid_responses)
             if events_charged > 0:
                 try:
@@ -219,7 +208,6 @@ async def main():
                 except Exception:
                     pass
 
-            # Log summary
             logger.info("=" * 40)
             logger.info("RESULTS")
             logger.info("=" * 40)
