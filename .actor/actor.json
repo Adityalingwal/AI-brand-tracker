@@ -14,8 +14,8 @@
     "dataset": "./dataset_schema.json"
   },
   "defaultRunOptions": {
-    "timeoutSecs": 600,
-    "memoryMbytes": 2048
+    "timeoutSecs": 900,
+    "memoryMbytes": 4096
   },
   "pricingModel": {
     "pricingType": "PAY_PER_EVENT",
