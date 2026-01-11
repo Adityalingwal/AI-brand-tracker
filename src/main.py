@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import traceback
 from datetime import datetime, timezone
 from typing import Optional
 from apify import Actor
@@ -220,7 +221,6 @@ async def main():
             if "ANTHROPIC_API_KEY" in error_msg or "api_key" in error_msg.lower():
                 error_msg = "API configuration error"
             logger.error(f"Error: {error_msg}")
-            import traceback
             tb = traceback.format_exc()
             if "ANTHROPIC_API_KEY" in tb or "api_key" in tb.lower():
                 logger.error("Error details hidden for security")

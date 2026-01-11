@@ -1,7 +1,11 @@
 """Brand visibility analyzer."""
 
+import asyncio
 import json
 from typing import Optional
+
+from anthropic import AsyncAnthropic
+
 from ..utils import sanitize_error_message
 
 
@@ -11,8 +15,6 @@ class BrandAnalyzer:
     def __init__(self, api_key: str, logger):
         self.api_key = api_key
         self.logger = logger
-
-        from anthropic import AsyncAnthropic
         self.client = AsyncAnthropic(api_key=api_key)
         self.model = "claude-haiku-4-5-20251001"
 
@@ -183,14 +185,27 @@ Generate the analysis now:"""
                 ]
             }
 
-            import asyncio
-            try:
-                response = await asyncio.wait_for(
-                    self.client.messages.create(**api_params),
-                    timeout=300.0
-                )
-            except asyncio.TimeoutError:
-                self.logger.error("Analysis timed out")
+            response = None
+            for attempt in range(2):
+                try:
+                    response = await asyncio.wait_for(
+                        self.client.messages.create(**api_params),
+                        timeout=300.0
+                    )
+                    break
+                except asyncio.TimeoutError:
+                    if attempt == 1:
+                        self.logger.error("Analysis timed out")
+                        return None
+                    await asyncio.sleep(2)
+                except Exception:
+                    if attempt == 1:
+                        self.logger.error("Analysis failed")
+                        return None
+                    await asyncio.sleep(2)
+
+            if not response:
+                self.logger.error("Analysis failed")
                 return None
 
             result_text = ""

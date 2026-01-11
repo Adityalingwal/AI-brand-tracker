@@ -5,6 +5,15 @@ from dataclasses import dataclass
 from typing import Optional, Any
 import asyncio
 import random
+
+from playwright.async_api import async_playwright
+
+try:
+    from playwright_stealth import Stealth
+    STEALTH_AVAILABLE = True
+except ImportError:
+    STEALTH_AVAILABLE = False
+
 from ..utils import sanitize_error_message
 
 
@@ -76,8 +85,6 @@ class BaseBrowserClient(ABC):
 
     async def initialize(self, headless: bool = False):
         """Initialize browser and navigate to platform."""
-        from playwright.async_api import async_playwright
-
         self.playwright = await async_playwright().start()
 
         self.browser = await self.playwright.chromium.launch(
@@ -98,12 +105,12 @@ class BaseBrowserClient(ABC):
         )
         self.page = await self.context.new_page()
 
-        try:
-            from playwright_stealth import Stealth
-            stealth = Stealth()
-            await stealth.apply_stealth_async(self.page)
-        except Exception:
-            pass
+        if STEALTH_AVAILABLE:
+            try:
+                stealth = Stealth()
+                await stealth.apply_stealth_async(self.page)
+            except Exception:
+                pass
         await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
         await asyncio.sleep(3)
 
