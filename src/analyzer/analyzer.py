@@ -170,7 +170,7 @@ Generate the analysis now:"""
         try:
             prompt = self._build_analysis_prompt(my_brand, competitors, platform_responses)
 
-            self.logger.info(f"[Analyzer] Analyzing {len(platform_responses)} responses...")
+            self.logger.info("Analyzing responses...")
 
             api_params = {
                 "model": self.model,
@@ -190,7 +190,7 @@ Generate the analysis now:"""
                     timeout=300.0
                 )
             except asyncio.TimeoutError:
-                self.logger.error("[Analyzer] API call timed out after 300 seconds")
+                self.logger.error("Analysis timed out")
                 return None
 
             result_text = ""
@@ -213,14 +213,13 @@ Generate the analysis now:"""
                 if "summary" in output:
                     output["summary"]["category"] = category
 
-                self.logger.info("[Analyzer] Analysis complete!")
+                self.logger.info("Analysis complete")
                 return output
 
-            except json.JSONDecodeError as e:
-                self.logger.error(f"[Analyzer] Failed to parse JSON: {e}")
-                self.logger.error(f"Raw response: {result_text[:500]}")
+            except json.JSONDecodeError:
+                self.logger.error("Analysis failed - invalid response format")
                 return None
 
-        except Exception as e:
-            self.logger.error(f"[Analyzer] Analysis failed: {sanitize_error_message(e)}")
+        except Exception:
+            self.logger.error("Analysis failed")
             return None

@@ -27,7 +27,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         try:
             cloudflare = await self.page.query_selector("text='Verify you are human'")
             if cloudflare:
-                self.logger.info("  Handling Cloudflare verification...")
                 checkbox = await self.page.query_selector("input[type='checkbox']")
                 if checkbox:
                     await checkbox.click()
@@ -39,7 +38,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
             cookie_btn = await self.page.query_selector("button:has-text('Accept all')")
             if cookie_btn:
                 await cookie_btn.click()
-                self.logger.info("  Accepted cookies")
                 await asyncio.sleep(1)
         except Exception:
             pass
@@ -48,7 +46,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
 
         try:
             await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
-            self.logger.info("  ChatGPT ready")
         except Exception as e:
             raise BrowserClientError(
                 message=f"ChatGPT page did not load properly: {e}",
@@ -64,7 +61,6 @@ class ChatGPTBrowserClient(BaseBrowserClient):
             )
             if maybe_btn:
                 await maybe_btn.click()
-                self.logger.info("  Dismissed login prompt")
                 await asyncio.sleep(1)
         except Exception:
             pass
@@ -86,6 +82,5 @@ class ChatGPTBrowserClient(BaseBrowserClient):
 
             return text.strip() if text else ""
 
-        except Exception as e:
-            self.logger.warning(f"  Response extraction error: {e}")
+        except Exception:
             return ""

@@ -36,14 +36,12 @@ class PerplexityBrowserClient(BaseBrowserClient):
                 btn = await self.page.query_selector(selector)
                 if btn:
                     await btn.click()
-                    self.logger.info(f"  Dismissed popup: {selector}")
                     await asyncio.sleep(1)
             except Exception:
                 pass
 
         try:
             await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
-            self.logger.info("  Perplexity ready")
         except Exception as e:
             raise BrowserClientError(
                 message=f"Perplexity page did not load properly: {e}",
@@ -73,6 +71,5 @@ class PerplexityBrowserClient(BaseBrowserClient):
 
             return ""
 
-        except Exception as e:
-            self.logger.warning(f"  Response extraction error: {e}")
+        except Exception:
             return ""

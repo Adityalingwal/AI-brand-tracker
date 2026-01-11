@@ -51,7 +51,6 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
                         "response": result.response,
                         "success": True,
                     })
-                    logger.info(f"[{platform.value}] Query {i+1}/{len(prompts)} done")
                 else:
                     error_tracker.add_error("query_failed", result.error or "Unknown", context=prompt_id)
                     responses.append({
@@ -82,8 +81,8 @@ async def query_platform(platform: Platform, prompts: list[str], logger, error_t
     finally:
         try:
             await client.close()
-        except Exception as e:
-            logger.debug(f"Browser cleanup error: {e}")
+        except Exception:
+            pass
     
     return responses
 
@@ -109,8 +108,6 @@ async def main():
 
             validation_errors = validate_input(actor_input)
             if validation_errors:
-                for error in validation_errors:
-                    logger.error(f"Validation error: {error.field} - {error.message}")
                 await Actor.push_data({
                     "type": "error",
                     "message": "Input validation failed",
@@ -121,11 +118,8 @@ async def main():
             logger.info(f"Category: {actor_input.category}")
             logger.info(f"Brand: {actor_input.my_brand}")
             logger.info(f"Platforms: {[p.value for p in actor_input.platforms]}")
-            logger.info(f"Prompts: {len(actor_input.prompts)}")
 
             all_prompts = actor_input.prompts
-
-            logger.info(f"Querying {len(actor_input.platforms)} platform(s)...")
             
             tasks = [
                 query_platform(platform, all_prompts, logger, error_tracker)
@@ -138,7 +132,6 @@ async def main():
                     timeout=480.0  # 8 minutes for all platforms
                 )
             except asyncio.TimeoutError:
-                logger.error("Platform queries timed out after 8 minutes")
                 error_tracker.add_error("timeout", "Platform queries exceeded time limit", recoverable=False)
                 platform_results = []
 
@@ -148,8 +141,6 @@ async def main():
                     all_responses.extend(result)
                 elif isinstance(result, Exception):
                     pass
-
-            logger.info(f"Collected {len(all_responses)} responses")
 
             valid_responses = [r for r in all_responses if r.get("success") and r.get("response")]
 
@@ -164,7 +155,6 @@ async def main():
             analysis_key = get_analysis_api_key()
 
             if not analysis_key:
-                logger.error("ANTHROPIC_API_KEY not configured")
                 await Actor.push_data({
                     "type": "error",
                     "message": "ANTHROPIC_API_KEY environment variable not set",

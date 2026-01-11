@@ -102,11 +102,8 @@ class BaseBrowserClient(ABC):
             from playwright_stealth import Stealth
             stealth = Stealth()
             await stealth.apply_stealth_async(self.page)
-            self.logger.info("  Applied stealth patches")
-        except Exception as e:
-            self.logger.warning(f"  Stealth patches skipped: {e}")
-
-        self.logger.info(f"  Navigating to {self.base_url}...")
+        except Exception:
+            pass
         await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
         await asyncio.sleep(3)
 
@@ -130,16 +127,15 @@ class BaseBrowserClient(ABC):
         """Wait for response to complete using polling. Override if platform needs custom logic."""
         check_interval = 1.5
         initial_wait_time = 30
-        initial_checks = int(initial_wait_time / check_interval)
+        max_checks = int(initial_wait_time / check_interval)
 
         # Phase 1: Check every 1.5s for up to 30s until response starts
         current_content = ""
-        for _ in range(initial_checks):
+        for _ in range(max_checks):
             await asyncio.sleep(check_interval)
             try:
                 current_content = await self._get_response_text()
-            except Exception as e:
-                self.logger.warning(f"  Error getting response text: {e}")
+            except Exception:
                 return False
 
             # Response started! Break out and start stability polling
@@ -148,7 +144,6 @@ class BaseBrowserClient(ABC):
 
         # If no response after 30s, give up
         if not current_content:
-            self.logger.warning("  No response started after 30s")
             return False
 
         # Phase 2: Poll until response is stable (no time limit)
@@ -160,8 +155,7 @@ class BaseBrowserClient(ABC):
             await asyncio.sleep(check_interval)
             try:
                 current_content = await self._get_response_text()
-            except Exception as e:
-                self.logger.warning(f"  Error getting response text: {e}")
+            except Exception:
                 return len(last_content) > 0
 
             if current_content == last_content:
@@ -176,8 +170,6 @@ class BaseBrowserClient(ABC):
         """Send a prompt to the AI platform and get a response."""
         try:
             self._message_count += 1
-            _safe_prompt_preview = prompt[:50].replace('\n', ' ').replace('\r', '')
-            self.logger.info(f"  {self.platform_name} query #{self._message_count}: {_safe_prompt_preview}...")
 
             if self._message_count > 1:
                 await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=30000)
@@ -202,11 +194,7 @@ class BaseBrowserClient(ABC):
 
             await self.page.keyboard.press("Enter")
 
-            self.logger.info("  Waiting for response...")
-            response_complete = await self._wait_for_response_complete()
-
-            if not response_complete:
-                self.logger.warning("  Response may be incomplete (timeout)")
+            response_complete = await self._wait_for_response_complete(timeout_seconds=90)
 
             response_text = await self._get_response_text()
 
@@ -218,8 +206,6 @@ class BaseBrowserClient(ABC):
                     success=False,
                     error=f"No response received from {self.platform_name}"
                 )
-
-            self.logger.info(f"  Got response: {len(response_text)} chars")
             await asyncio.sleep(2)
 
             return BrowserQueryResult(
@@ -259,7 +245,6 @@ class BaseBrowserClient(ABC):
 
             if attempt < max_retries - 1:
                 wait_time = (attempt + 1) * 2
-                self.logger.warning(f"  Retry {attempt + 1}/{max_retries} after {wait_time}s...")
                 await asyncio.sleep(wait_time)
 
         return BrowserQueryResult(

@@ -35,7 +35,6 @@ class GeminiBrowserClient(BaseBrowserClient):
                 btn = await self.page.query_selector(selector)
                 if btn:
                     await btn.click()
-                    self.logger.info(f"  Dismissed: {selector}")
                     await asyncio.sleep(1)
                     break
             except Exception:
@@ -45,14 +44,12 @@ class GeminiBrowserClient(BaseBrowserClient):
             try_btn = await self.page.query_selector("button:has-text('Try Gemini')")
             if try_btn:
                 await try_btn.click()
-                self.logger.info("  Clicked 'Try Gemini'")
                 await asyncio.sleep(2)
         except Exception:
             pass
 
         try:
             await self.page.wait_for_selector(self.textbox_selector, timeout=15000)
-            self.logger.info("  Gemini ready")
         except Exception as e:
             raise BrowserClientError(
                 message=f"Gemini page did not load properly: {e}",
@@ -83,6 +80,5 @@ class GeminiBrowserClient(BaseBrowserClient):
 
             return ""
 
-        except Exception as e:
-            self.logger.warning(f"  Response extraction error: {e}")
+        except Exception:
             return ""
