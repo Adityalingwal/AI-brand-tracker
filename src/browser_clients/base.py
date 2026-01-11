@@ -71,15 +71,16 @@ class BaseBrowserClient(ABC):
         for char in text:
             await self.page.keyboard.type(char, delay=random.randint(min_delay, max_delay))
 
-    async def initialize(self, headless: bool = None):
-        """Initialize browser and navigate to platform."""
-        # Detect if running on Apify
-        is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1" or os.environ.get("APIFY_TOKEN") is not None
+    async def initialize(self, headless: bool = False):
+        """Initialize browser and navigate to platform.
         
-        # Auto-detect headless mode: True on Apify, False locally
-        if headless is None:
-            headless = is_apify
+        Note: headless=False is required because ChatGPT and Perplexity 
+        block headless browsers. We use Xvfb for virtual display on servers.
+        """
+        is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1"
         
+        # Always use headed mode - platforms block headless browsers
+        # Xvfb provides virtual display on Apify
         self.logger.info(f"[{self.platform_name}] Browser config: headless={headless}, apify={is_apify}")
         
         self.playwright = await async_playwright().start()
