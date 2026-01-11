@@ -12,6 +12,10 @@ As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and 
 - **Actionable Gap Analysis** — Identify specific queries where your brand is missing from AI recommendations
 - **Plain English Summaries** — No complex metrics, just clear insights you can act on
 
+## 🎬 See It In Action
+
+[![Watch Demo](https://img.youtube.com/vi/6jWtwqx9B8g/maxresdefault.jpg)](https://www.youtube.com/watch?v=6jWtwqx9B8g)
+
 ---
 
 ## 🧭 How to Use
@@ -215,7 +219,6 @@ Yes! Schedule recurring runs in Apify Console to track how your brand visibility
 | Rate limits           | AI platforms may throttle queries during high-traffic periods |
 | Response variability  | AI responses can vary between runs for the same prompt        |
 | Platform availability | Occasional downtime on AI platforms may affect results        |
-
 
 ---
 
