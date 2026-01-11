@@ -3,13 +3,11 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
-
 class Platform(Enum):
     """Supported AI platforms (browser-scraped, no API needed)."""
     CHATGPT = "chatgpt"
     GEMINI = "gemini"
     PERPLEXITY = "perplexity"
-
 
 @dataclass
 class ActorInput:

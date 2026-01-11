@@ -38,20 +38,7 @@ class BrowserQueryResult:
 
 
 class BaseBrowserClient(ABC):
-    """Abstract base class for browser-based AI platform clients.
-
-    Subclasses only need to implement:
-    - platform_name (property)
-    - base_url (property)
-    - textbox_selector (property)
-    - _platform_init() - handle cookies/popups
-    - _get_response_text() - extract response from page
-
-    Optional overrides:
-    - _handle_popups_after_refresh() - if popups appear after refresh
-    - _wait_for_response_complete() - if platform needs custom wait logic
-    """
-
+  
     def __init__(self, logger: Any, proxy_config: Optional[dict] = None):
         """Initialize browser client."""
         self.logger = logger
@@ -136,7 +123,6 @@ class BaseBrowserClient(ABC):
         initial_wait_time = 30
         max_checks = int(initial_wait_time / check_interval)
 
-        # Phase 1: Check every 1.5s for up to 30s until response starts
         current_content = ""
         for _ in range(max_checks):
             await asyncio.sleep(check_interval)
@@ -145,15 +131,12 @@ class BaseBrowserClient(ABC):
             except Exception:
                 return False
 
-            # Response started! Break out and start stability polling
             if current_content:
                 break
 
-        # If no response after 30s, give up
         if not current_content:
             return False
 
-        # Phase 2: Poll until response is stable (no time limit)
         last_content = current_content
         stable_count = 0
         required_stable = 3

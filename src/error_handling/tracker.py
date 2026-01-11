@@ -91,7 +91,7 @@ class ExecutionTracker:
         if self.errors:
             logger.info("")
             logger.info("  Errors:")
-            for error in self.errors[-5:]:  # Show last 5 errors
+            for error in self.errors[-5:]:
                 logger.info(f"    - [{error.error_type}] {error.message}")
             if len(self.errors) > 5:
                 logger.info(f"    ... and {len(self.errors) - 5} more")
@@ -99,7 +99,7 @@ class ExecutionTracker:
         if self.warnings:
             logger.info("")
             logger.info("  Warnings:")
-            for warning in self.warnings[-3:]:  # Show last 3 warnings
+            for warning in self.warnings[-3:]:
                 logger.info(f"    - {warning}")
             if len(self.warnings) > 3:
                 logger.info(f"    ... and {len(self.warnings) - 3} more")
