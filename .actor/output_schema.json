@@ -1,0 +1,19 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "AI Brand Visibility Analysis Results",
+  "description": "Comprehensive brand tracking results showing visibility metrics across AI platforms (ChatGPT, Gemini, Perplexity)",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "Brand Analysis Results",
+      "description": "Complete brand visibility analysis data including mentions, citations, and competitive insights",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    },
+    "overview": {
+      "type": "string",
+      "title": "Performance Overview",
+      "description": "Summary view of brand performance across all AI platforms",
+      "template": "{{links.apiDefaultDatasetUrl}}/items?view=overview"
+    }
+  }
+}
