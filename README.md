@@ -20,11 +20,12 @@ As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and 
 
 ## 🧭 How to Use
 
-1. Enter your **brand name** and **industry category** (e.g., "CRM software")
-2. Add **competitor brands** you want to compare against (optional)
-3. Select which **AI platforms** to query (ChatGPT, Gemini, Perplexity)
-4. Add your own **custom prompts**
-5. Click **Run** and receive a comprehensive visibility report
+1. Enter **industry category** (e.g., "CRM software")
+2. Enter your **brand name** (e.g., "hubspot")
+3. Add **competitor brands** you want to compare against.
+4. Select which **AI platforms** to query (ChatGPT, Gemini, Perplexity)
+5. Add your own **custom prompts**
+6. Click **Run** and receive a comprehensive visibility report
 
 ---
 
@@ -194,7 +195,7 @@ This compute cost is charged by Apify from your account.
 
 ## ❓ FAQ
 
-**Q: How does it query AI platforms without API keys?**
+**Q: How does it query AI platforms?**
 
 The Actor uses browser automation to interact with AI platforms exactly like a human user would.
 
@@ -204,11 +205,7 @@ Currently: ChatGPT, Gemini, and Perplexity.
 
 **Q: How accurate is the brand detection?**
 
-An AI analyzes each response to detect brand mentions, context, and positioning. Full responses are included so you can verify results.
-
-**Q: Can I track visibility over time?**
-
-Yes! Schedule recurring runs in Apify Console to track how your brand visibility changes week-over-week.
+An AI analyzes each response to detect brand mentions, context, and positioning.
 
 ---
 
