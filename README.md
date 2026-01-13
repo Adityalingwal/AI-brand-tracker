@@ -110,15 +110,15 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
     "Pipedrive": {
       "platformPerformance": {
         "chatgpt": {
-          "summary": "Moderate visibility with 3 mentions, ranking #3. ChatGPT recommends Pipedrive as an affordable, pipeline-focused solution ideal for small sales teams.",
+          "summary": "ChatGPT recommends Pipedrive as an affordable, pipeline-focused solution ideal for small sales teams.",
           "promptsMentionSummary": "Appears in budget-conscious and sales-focused queries."
         },
         "gemini": {
-          "summary": "3 mentions with #3 ranking. Gemini highlights Pipedrive's visual pipeline management and competitive pricing structure.",
+          "summary": "Gemini highlights Pipedrive's visual pipeline management and competitive pricing structure.",
           "promptsMentionSummary": "Mentioned for visual workflows and value proposition."
         },
         "perplexity": {
-          "summary": "3 mentions, ranking #3. Perplexity presents Pipedrive as a cost-effective, sales-centric option for smaller organizations.",
+          "summary": "Perplexity presents Pipedrive as a cost-effective, sales-centric option for smaller organizations.",
           "promptsMentionSummary": "Featured in price-comparison and sales tool discussions."
         }
       }
