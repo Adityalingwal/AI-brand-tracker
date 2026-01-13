@@ -76,16 +76,16 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
     "brand": "Salesforce",
     "platformPerformance": {
       "chatgpt": {
-        "summary": "Salesforce maintains strong enterprise positioning with 5 mentions across 2 of 3 prompts — ranking #2 behind HubSpot. Positioned as the sophisticated leader for complex enterprise needs, but absent from small business recommendations.",
-        "promptsMentionSummary": "Strong in enterprise and automation queries. **Visibility gap**: Missing from small business recommendations dominated by HubSpot and Zoho."
+        "summary": "Your brand achieved strong visibility with 5 mentions across 2 of 3 prompts, ranking #2 overall. ChatGPT positions Salesforce as the go-to enterprise solution for complex business needs, though it's notably absent from small business recommendations.",
+        "promptsMentionSummary": "Performed well in enterprise and automation queries. Visibility gap identified: Missing from small business recommendations where HubSpot and Zoho dominate."
       },
       "gemini": {
-        "summary": "Commanding visibility with 7 mentions across all 3 prompts — ranking #1. Featured as the comprehensive enterprise solution with advanced AI capabilities.",
-        "promptsMentionSummary": "Mentioned in all prompts with emphasis on customization depth and Einstein AI forecasting."
+        "summary": "Excellent performance with 7 mentions across all 3 prompts, achieving the #1 ranking. Gemini consistently highlights Salesforce as the comprehensive enterprise platform with advanced AI capabilities.",
+        "promptsMentionSummary": "Complete coverage across all query types. Particularly strong positioning around customization depth and Einstein AI forecasting features."
       },
       "perplexity": {
-        "summary": "Selective but authoritative visibility with 5 mentions across 2 of 3 prompts — ranking #2. Positioned as enterprise-grade for complex operations.",
-        "promptsMentionSummary": "Featured in enterprise and automation queries. Absent from small business recommendations."
+        "summary": "Solid visibility with 5 mentions across 2 of 3 prompts, ranking #2. Perplexity presents Salesforce as the enterprise-grade choice for organizations with complex operational requirements.",
+        "promptsMentionSummary": "Well-represented in enterprise and automation discussions. Gap identified: Not mentioned in small business recommendation queries."
       }
     }
   },
@@ -94,27 +94,32 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
     "HubSpot": {
       "platformPerformance": {
         "chatgpt": {
-          "summary": "Dominates with 7 mentions across all prompts — #1 ranking. Featured as leading SMB recommendation and credible enterprise alternative.",
-          "promptsMentionSummary": "Complete coverage with no visibility gaps. Dominant in small business and automation queries."
+          "summary": "HubSpot leads with 7 mentions across all prompts, claiming the #1 position. ChatGPT recommends it as the top choice for SMBs while also positioning it as a credible enterprise alternative.",
+          "promptsMentionSummary": "Complete visibility with no gaps. Dominates small business and automation-focused queries."
         },
         "gemini": {
-          "summary": "5 mentions, #2 ranking. Positioned as accessible alternative with excellent ease-of-use."
+          "summary": "Strong showing with 5 mentions, ranking #2. Gemini emphasizes HubSpot's accessibility and excellent ease-of-use for growing teams.",
+          "promptsMentionSummary": "Consistent mentions across query types with focus on user-friendliness."
         },
         "perplexity": {
-          "summary": "6 mentions, #1 ranking. Go-to recommendation for feature-accessibility balance."
+          "summary": "Top performer with 6 mentions, ranking #1. Perplexity positions HubSpot as the go-to recommendation for teams seeking the best balance of features and accessibility.",
+          "promptsMentionSummary": "Featured prominently in all recommendation queries."
         }
       }
     },
     "Pipedrive": {
       "platformPerformance": {
         "chatgpt": {
-          "summary": "3 mentions, #3 ranking. Affordable, pipeline-focused alternative for small teams."
+          "summary": "Moderate visibility with 3 mentions, ranking #3. ChatGPT recommends Pipedrive as an affordable, pipeline-focused solution ideal for small sales teams.",
+          "promptsMentionSummary": "Appears in budget-conscious and sales-focused queries."
         },
         "gemini": {
-          "summary": "3 mentions, #3 ranking. Emphasized for visual pipelines and competitive pricing."
+          "summary": "3 mentions with #3 ranking. Gemini highlights Pipedrive's visual pipeline management and competitive pricing structure.",
+          "promptsMentionSummary": "Mentioned for visual workflows and value proposition."
         },
         "perplexity": {
-          "summary": "3 mentions, #3 ranking. Cost-effective, sales-focused option."
+          "summary": "3 mentions, ranking #3. Perplexity presents Pipedrive as a cost-effective, sales-centric option for smaller organizations.",
+          "promptsMentionSummary": "Featured in price-comparison and sales tool discussions."
         }
       }
     }
