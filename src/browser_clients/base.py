@@ -173,11 +173,11 @@ class BaseBrowserClient(ABC):
 
     async def _wait_for_response_complete(self, timeout_seconds: int = 120, old_content: str = "") -> bool:
         # This is now used only for checking text stability AFTER count has increased
-        check_interval = 1.5
+        check_interval = 2.0
         
         last_content = ""
         stable_count = 0
-        required_stable = 3
+        required_stable = 4  # Increased from 3 to ensure response is truly complete (8 seconds of stability)
 
         # We assume count has already increased, so we just wait for text to be stable (not streaming)
         for _ in range(int(timeout_seconds / check_interval)):
@@ -248,7 +248,7 @@ class BaseBrowserClient(ABC):
                     success=False,
                     error=f"Empty response received from {self.platform_name}"
                 )
-            await asyncio.sleep(2)
+            await asyncio.sleep(5)  # Increased from 2s - give platform time to fully settle before next query
 
             return BrowserQueryResult(
                 platform=self.platform_name,
