@@ -171,9 +171,9 @@ This Actor uses Pay-Per-Event pricing. You pay a flat fee per complete analysis.
 
 | Event            | Price | What You Get                                       |
 | ---------------- | ----- | -------------------------------------------------- |
-| `brand-analysis` | $0.10 | Complete analysis across all platforms and prompts |
+| `brand-analysis` | $0.30 | Complete analysis across all platforms and prompts |
 
-**💡 Example:** Analyzing your brand across 3 AI platforms with 3 prompts costs $0.10 total.
+**💡 Example:** Analyzing your brand across 3 AI platforms with 3 prompts costs $0.30 total.
 
 ### Tier Discounts
 
@@ -181,10 +181,10 @@ Apify subscription members get discounts:
 
 | Plan           | Price per Analysis |
 | -------------- | ------------------ |
-| Free / Starter | $0.10              |
-| Bronze         | $0.08 (20% off)    |
-| Silver         | $0.06 (40% off)    |
-| Gold           | $0.04 (60% off)    |
+| Free / Starter | $0.30              |
+| Bronze         | $0.25 (17% off)    |
+| Silver         | $0.20 (33% off)    |
+| Gold           | $0.15 (50% off)    |
 
 ### Compute Costs (Paid Separately to Apify)
 
@@ -235,4 +235,4 @@ An AI analyzes each response to detect brand mentions, context, and positioning.
 - Competitive benchmarking across AI platforms
 - Plain English summaries for actionable insights
 - Custom prompt support
-- Pay-per-event pricing ($0.10 per complete analysis)
+- Pay-per-event pricing ($0.30 per complete analysis)

@@ -24,12 +24,12 @@
       {
         "eventName": "brand-analysis",
         "displayName": "Brand Analysis",
-        "pricePerEvent": 0.10,
+        "pricePerEvent": 0.3,
         "pricePerEventByTier": {
-          "FREE": 0.10,
-          "BRONZE": 0.08,
-          "SILVER": 0.06,
-          "GOLD": 0.04
+          "FREE": 0.3,
+          "BRONZE": 0.25,
+          "SILVER": 0.2,
+          "GOLD": 0.15
         },
         "description": "Complete brand visibility analysis across all platforms"
       }
