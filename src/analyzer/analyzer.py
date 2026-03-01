@@ -4,7 +4,7 @@ import asyncio
 import json
 from typing import Optional
 
-from anthropic import AsyncAnthropic
+from openai import AsyncOpenAI
 
 from ..utils import sanitize_error_message
 from .prompts import build_analysis_prompt
@@ -16,8 +16,8 @@ class BrandAnalyzer:
     def __init__(self, api_key: str, logger):
         self.api_key = api_key
         self.logger = logger
-        self.client = AsyncAnthropic(api_key=api_key)
-        self.model = "claude-haiku-4-5-20251001"
+        self.client = AsyncOpenAI(api_key=api_key)
+        self.model = "gpt-4.1-mini"
 
     async def analyze_all_responses(
         self,
@@ -46,7 +46,7 @@ class BrandAnalyzer:
             for attempt in range(2):
                 try:
                     response = await asyncio.wait_for(
-                        self.client.messages.create(**api_params),
+                        self.client.chat.completions.create(**api_params),
                         timeout=300.0
                     )
                     break
@@ -65,10 +65,7 @@ class BrandAnalyzer:
                 self.logger.error("Analysis failed")
                 return None
 
-            result_text = ""
-            for block in response.content:
-                if block.type == "text":
-                    result_text += block.text
+            result_text = response.choices[0].message.content or ""
 
             try:
                 clean_text = result_text.strip()

@@ -100,8 +100,8 @@ async def query_platform(platform: Platform, prompts: list[str], logger, executi
 
 
 def get_analysis_api_key() -> Optional[str]:
-    """Get Anthropic API key from environment."""
-    return os.environ.get("ANTHROPIC_API_KEY")
+    """Get OpenAI API key from environment."""
+    return os.environ.get("OPENAI_API_KEY")
 
 
 async def main():
@@ -169,7 +169,7 @@ async def main():
             if not analysis_key:
                 await Actor.push_data({
                     "type": "error",
-                    "message": "ANTHROPIC_API_KEY environment variable not set",
+                    "message": "OPENAI_API_KEY environment variable not set",
                 })
                 return
 
@@ -228,11 +228,11 @@ async def main():
             
         except Exception as e:
             error_msg = str(e)
-            if "ANTHROPIC_API_KEY" in error_msg or "api_key" in error_msg.lower():
+            if "OPENAI_API_KEY" in error_msg or "api_key" in error_msg.lower():
                 error_msg = "API configuration error"
             logger.error(f"Error: {error_msg}")
             tb = traceback.format_exc()
-            if "ANTHROPIC_API_KEY" in tb or "api_key" in tb.lower():
+            if "OPENAI_API_KEY" in tb or "api_key" in tb.lower():
                 logger.error("Error details hidden for security")
             else:
                 traceback.print_exc()
