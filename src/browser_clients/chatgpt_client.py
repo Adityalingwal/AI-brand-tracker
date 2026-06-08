@@ -75,14 +75,48 @@ class ChatGPTBrowserClient(BaseBrowserClient):
             pass
 
     async def _handle_popups_after_refresh(self):
-        """Handle popups that appear after page refresh."""
+        """Handle popups that appear after a failed attempt."""
         await self._dismiss_login_popup()
+
+        try:
+            await self._find_visible_textbox(timeout_ms=3000)
+        except Exception:
+            try:
+                await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
+                await asyncio.sleep(3)
+                await self._platform_init()
+            except Exception:
+                pass
+
+    async def _submit_prompt(self):
+        """Submit ChatGPT prompts via the composer send button when available."""
+        send_selectors = [
+            "button[data-testid='send-button']",
+            "button[aria-label='Send prompt']",
+            "button[aria-label='Send message']",
+            "button[aria-label='Submit']",
+        ]
+
+        for selector in send_selectors:
+            try:
+                button = await self.page.query_selector(selector)
+                if button and await button.is_visible() and await button.is_enabled():
+                    await button.click()
+                    return
+            except Exception:
+                pass
+
+        await self.page.keyboard.press("Enter")
 
     async def _get_message_count(self) -> int:
         """Count assistant messages in the conversation."""
         try:
             messages = await self.page.query_selector_all("[data-message-author-role='assistant']")
-            return len(messages)
+            if messages:
+                return len(messages)
+
+            markdown_blocks = await self.page.query_selector_all(".markdown, [class*='markdown']")
+            return len(markdown_blocks)
         except Exception:
             return 0
 
@@ -90,20 +124,24 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         try:
             messages = await self.page.query_selector_all("[data-message-author-role='assistant']")
 
-            if not messages:
-                return ""
-
-            last_message = messages[-1]
+            if messages:
+                last_message = messages[-1]
             
-            content_div = await last_message.query_selector(".markdown, [class*='markdown']")
-            if content_div:
-                text = await content_div.inner_text()
+                content_div = await last_message.query_selector(".markdown, [class*='markdown']")
+                if content_div:
+                    text = await content_div.inner_text()
+                    if text and len(text.strip()) > 5:
+                        return text.strip()
+
+                text = await last_message.inner_text()
                 if text and len(text.strip()) > 5:
                     return text.strip()
 
-            text = await last_message.inner_text()
-            if text and len(text.strip()) > 5:
-                return text.strip()
+            markdown_blocks = await self.page.query_selector_all(".markdown, [class*='markdown']")
+            if markdown_blocks:
+                text = await markdown_blocks[-1].inner_text()
+                if text and len(text.strip()) > 5:
+                    return text.strip()
 
             return ""
 
