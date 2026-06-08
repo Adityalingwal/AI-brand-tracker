@@ -66,10 +66,50 @@ class BaseBrowserClient(ABC):
         """CSS selector for the input textbox."""
         pass
 
+    @property
+    def textbox_selectors(self) -> tuple[str, ...]:
+        """Candidate selectors for the platform prompt textbox."""
+        return (self.textbox_selector,)
+
+    async def _find_visible_textbox(self, timeout_ms: int = 30000):
+        """Find the first visible textbox from platform selector candidates."""
+        deadline = asyncio.get_running_loop().time() + (timeout_ms / 1000)
+
+        while asyncio.get_running_loop().time() < deadline:
+            for selector in self.textbox_selectors:
+                try:
+                    textbox = await self.page.query_selector(selector)
+                    if textbox and await textbox.is_visible():
+                        return textbox
+                except Exception:
+                    pass
+
+            await asyncio.sleep(0.5)
+
+        selectors = ", ".join(self.textbox_selectors)
+        raise BrowserClientError(
+            message=f"Could not find visible {self.platform_name} textbox using: {selectors}",
+            platform=self.platform_name,
+            recoverable=True
+        )
+
     async def _human_type(self, text: str, min_delay: int = 30, max_delay: int = 80):
         """Type text with human-like delays between keystrokes."""
         for char in text:
             await self.page.keyboard.type(char, delay=random.randint(min_delay, max_delay))
+
+    async def _clear_textbox(self, textbox):
+        """Clear any stale text before typing the next prompt."""
+        try:
+            await textbox.click()
+            await self.page.keyboard.press("Control+A")
+            await self.page.keyboard.press("Backspace")
+        except Exception:
+            pass
+
+    async def _submit_prompt(self):
+        """Submit the typed prompt. Platforms can override for button-only UIs."""
+        await self.page.keyboard.press("Enter")
 
     async def _execute_with_retry(self, operation: callable, error_message: str, max_retries: int = 1):
         for attempt in range(max_retries + 1):
@@ -127,7 +167,7 @@ class BaseBrowserClient(ABC):
                     await stealth.apply_stealth_async(self.page)
                 except Exception:
                     pass
-            await self.page.goto(self.base_url, wait_until="commit", timeout=60000)
+            await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)
             await asyncio.sleep(3)
 
             await self._platform_init()
@@ -175,25 +215,30 @@ class BaseBrowserClient(ABC):
         # This is now used only for checking text stability AFTER count has increased
         check_interval = 2.0
         
-        last_content = ""
+        last_content = old_content
         stable_count = 0
         required_stable = 4  # Increased from 3 to ensure response is truly complete (8 seconds of stability)
 
         # We assume count has already increased, so we just wait for text to be stable (not streaming)
         for _ in range(int(timeout_seconds / check_interval)):
-             await asyncio.sleep(check_interval)
-             try:
-                 current_content = await self._get_response_text()
-             except Exception:
-                 continue
+            await asyncio.sleep(check_interval)
+            try:
+                current_content = await self._get_response_text()
+            except Exception:
+                continue
 
-             if current_content and current_content == last_content and len(current_content) > 10:
-                 stable_count += 1
-                 if stable_count >= required_stable:
-                     return True
-             else:
-                 stable_count = 0
-                 last_content = current_content
+            if (
+                current_content
+                and current_content != old_content
+                and current_content == last_content
+                and len(current_content) > 10
+            ):
+                stable_count += 1
+                if stable_count >= required_stable:
+                    return True
+            else:
+                stable_count = 0
+                last_content = current_content
         
         return False
 
@@ -202,45 +247,48 @@ class BaseBrowserClient(ABC):
         """Send a prompt to the AI platform and get a response."""
         async def _query_impl():
             self._message_count += 1
-            await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
-            textbox = await self.page.query_selector(self.textbox_selector)
-
-            if not textbox:
-                raise BrowserClientError(
-                    message=f"Could not find {self.platform_name} textbox",
-                    platform=self.platform_name,
-                    recoverable=True
-                )
+            textbox = await self._find_visible_textbox(timeout_ms=30000)
 
             # Capture old state
             old_count = await self._get_message_count()
+            old_response_text = await self._get_response_text()
 
             await textbox.click()
             await asyncio.sleep(0.5)
 
+            await self._clear_textbox(textbox)
             await self._human_type(prompt)
             await asyncio.sleep(0.5)
 
-            await self.page.keyboard.press("Enter")
+            await self._submit_prompt()
 
             # 1. Wait for new message bubble to appear
             new_message_appeared = await self._wait_for_new_message(old_count, timeout_seconds=60)
             
             if not new_message_appeared:
-                 return BrowserQueryResult(
-                    platform=self.platform_name,
-                    prompt=prompt,
-                    response="",
-                    success=False,
-                    error=f"No new response received from {self.platform_name} (count did not increase)"
+                response_completed = await self._wait_for_response_complete(
+                    timeout_seconds=30,
+                    old_content=old_response_text
                 )
 
+                if not response_completed:
+                    return BrowserQueryResult(
+                        platform=self.platform_name,
+                        prompt=prompt,
+                        response="",
+                        success=False,
+                        error=f"No new response received from {self.platform_name} (count did not increase)"
+                    )
+
             # 2. Wait for text to finish streaming/stabilize
-            await self._wait_for_response_complete(timeout_seconds=90)
+            await self._wait_for_response_complete(
+                timeout_seconds=90,
+                old_content=old_response_text
+            )
 
             response_text = await self._get_response_text()
 
-            if not response_text:
+            if not response_text or response_text == old_response_text:
                 return BrowserQueryResult(
                     platform=self.platform_name,
                     prompt=prompt,
@@ -273,8 +321,24 @@ class BaseBrowserClient(ABC):
             )
 
     async def query_with_retry(self, prompt: str, max_retries: int = 1) -> BrowserQueryResult:
-        """Wrapper for query (now handled internally by _execute_with_retry)."""
-        return await self.query(prompt)
+        """Query with retries for recoverable platform UI flakiness."""
+        last_result = None
+
+        for attempt in range(max_retries + 1):
+            result = await self.query(prompt)
+            if result.success:
+                return result
+
+            last_result = result
+
+            if attempt < max_retries:
+                self.logger.warning(
+                    f"[{self.platform_name}] Retrying prompt after failure: {result.error}"
+                )
+                await self._handle_popups_after_refresh()
+                await asyncio.sleep(2)
+
+        return last_result
 
     async def close(self):
         """Close browser and cleanup."""

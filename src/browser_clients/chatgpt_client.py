@@ -20,6 +20,15 @@ class ChatGPTBrowserClient(BaseBrowserClient):
     def textbox_selector(self) -> str:
         return "#prompt-textarea"
 
+    @property
+    def textbox_selectors(self) -> tuple[str, ...]:
+        return (
+            "#prompt-textarea[contenteditable='true']",
+            "div#prompt-textarea[role='textbox']",
+            "textarea[name='prompt-textarea']",
+            "#prompt-textarea",
+        )
+
     async def _platform_init(self):
         """Handle ChatGPT-specific initialization."""
         await asyncio.sleep(3)
@@ -45,7 +54,7 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         await self._dismiss_login_popup()
 
         try:
-            await self.page.wait_for_selector(self.textbox_selector, timeout=30000)
+            await self._find_visible_textbox(timeout_ms=30000)
         except Exception as e:
             raise BrowserClientError(
                 message=f"ChatGPT page did not load properly: {e}",
@@ -70,30 +79,30 @@ class ChatGPTBrowserClient(BaseBrowserClient):
         await self._dismiss_login_popup()
 
     async def _get_message_count(self) -> int:
-        """Count the number of conversation turns."""
+        """Count assistant messages in the conversation."""
         try:
-            articles = await self.page.query_selector_all("article[data-testid^='conversation-turn']")
-            return len(articles)
+            messages = await self.page.query_selector_all("[data-message-author-role='assistant']")
+            return len(messages)
         except Exception:
             return 0
 
     async def _get_response_text(self) -> str:
         try:
-            articles = await self.page.query_selector_all("article[data-testid^='conversation-turn']")
+            messages = await self.page.query_selector_all("[data-message-author-role='assistant']")
 
-            if not articles:
+            if not messages:
                 return ""
 
-            last_article = articles[-1]
+            last_message = messages[-1]
             
-            content_div = await last_article.query_selector(".markdown")
+            content_div = await last_message.query_selector(".markdown, [class*='markdown']")
             if content_div:
                 text = await content_div.inner_text()
-                if text and len(text.strip()) > 50:
+                if text and len(text.strip()) > 5:
                     return text.strip()
 
-            text = await last_article.inner_text()
-            if text and len(text.strip()) > 50:
+            text = await last_message.inner_text()
+            if text and len(text.strip()) > 5:
                 return text.strip()
 
             return ""
