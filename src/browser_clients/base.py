@@ -4,9 +4,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Any
 import asyncio
+import json
 import random
 import os
+from urllib.parse import urlparse
 
+from apify import Actor
 from playwright.async_api import async_playwright
 
 try:
@@ -40,13 +43,24 @@ class BrowserQueryResult:
 
 class BaseBrowserClient(ABC):
   
-    def __init__(self, logger: Any, proxy_config: Optional[dict] = None):
+    def __init__(
+        self,
+        logger: Any,
+        proxy_config: Optional[Any] = None,
+        diagnostics_enabled: bool = True,
+    ):
         """Initialize browser client."""
         self.logger = logger
+        self.proxy_config = proxy_config
+        self.diagnostics_enabled = diagnostics_enabled
         self.page = None
         self.browser = None
         self.context = None
+        self.playwright = None
         self._message_count = 0
+        self._headless = False
+        self._diagnostic_count = 0
+        self._proxy_session_count = 0
 
     @property
     @abstractmethod
@@ -111,6 +125,32 @@ class BaseBrowserClient(ABC):
         """Submit the typed prompt. Platforms can override for button-only UIs."""
         await self.page.keyboard.press("Enter")
 
+    async def _build_playwright_proxy(self) -> Optional[dict[str, str]]:
+        """Create a Playwright proxy config from Apify ProxyConfiguration."""
+        if not self.proxy_config:
+            return None
+
+        self._proxy_session_count += 1
+        session_id = f"{self.platform_name}-{self._proxy_session_count}-{random.randint(1000, 9999)}"
+        proxy_info = await self.proxy_config.new_proxy_info(session_id=session_id)
+
+        if not proxy_info or not proxy_info.url:
+            return None
+
+        parsed = urlparse(proxy_info.url)
+        server = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+        proxy = {"server": server}
+
+        username = parsed.username or getattr(proxy_info, "username", None)
+        password = parsed.password or getattr(proxy_info, "password", None)
+
+        if username:
+            proxy["username"] = username
+        if password:
+            proxy["password"] = password
+
+        return proxy
+
     async def _execute_with_retry(self, operation: callable, error_message: str, max_retries: int = 1):
         for attempt in range(max_retries + 1):
             try:
@@ -124,6 +164,7 @@ class BaseBrowserClient(ABC):
 
     async def initialize(self, headless: bool = False):
         async def _init_impl():
+            self._headless = headless
             self.playwright = await async_playwright().start()
             
             is_apify = os.environ.get("APIFY_IS_AT_HOME") == "1"
@@ -136,13 +177,11 @@ class BaseBrowserClient(ABC):
                 "--disable-infobars",
                 "--disable-gpu",
                 "--disable-software-rasterizer",
-                "--single-process",
             ]
             
             if is_apify:
                 browser_args.extend([
                     "--disable-extensions",
-                    "--disable-background-networking",
                     "--disable-sync",
                     "--no-first-run",
                     "--no-zygote",
@@ -150,9 +189,18 @@ class BaseBrowserClient(ABC):
             else:
                 browser_args.append("--window-size=1920,1080")
 
+            launch_options = {
+                "headless": headless,
+                "args": browser_args,
+            }
+            playwright_proxy = await self._build_playwright_proxy()
+
+            if playwright_proxy:
+                launch_options["proxy"] = playwright_proxy
+                self.logger.info(f"[{self.platform_name}] Browser proxy enabled")
+
             self.browser = await self.playwright.chromium.launch(
-                headless=headless,
-                args=browser_args
+                **launch_options
             )
 
             self.context = await self.browser.new_context(
@@ -195,6 +243,94 @@ class BaseBrowserClient(ABC):
     async def _handle_popups_after_refresh(self):
         """Handle any popups that appear after page refresh. Override if needed."""
         pass
+
+    async def _restart_browser(self):
+        """Restart browser context, rotating proxy session when proxy is configured."""
+        await self.close()
+        await self.initialize(headless=self._headless)
+
+    async def _page_diagnostic_summary(self) -> dict[str, Any]:
+        """Collect a bounded, non-sensitive page summary for debugging platform UI failures."""
+        if not self.page:
+            return {"error": "page not initialized"}
+
+        try:
+            return await self.page.evaluate(
+                """() => {
+                    const visible = (el) => {
+                        const style = getComputedStyle(el);
+                        const rect = el.getBoundingClientRect();
+                        return style.visibility !== 'hidden'
+                            && style.display !== 'none'
+                            && rect.width > 0
+                            && rect.height > 0;
+                    };
+                    const countVisible = (selector) =>
+                        Array.from(document.querySelectorAll(selector)).filter(visible).length;
+
+                    return {
+                        url: location.href,
+                        title: document.title,
+                        bodyTextStart: document.body.innerText.slice(0, 4000),
+                        visibleCounts: {
+                            textboxes: countVisible('textarea, [contenteditable="true"], [role="textbox"]'),
+                            buttons: countVisible('button'),
+                            chatgptComposer: countVisible('#prompt-textarea'),
+                            chatgptSendButtons: countVisible(
+                                'button[data-testid="send-button"], button[aria-label="Send prompt"], button[aria-label="Send message"]'
+                            ),
+                            chatgptAssistantMessages: countVisible('[data-message-author-role="assistant"]'),
+                            perplexityComposer: countVisible('#ask-input'),
+                            perplexityMarkdown: countVisible('[id^="markdown-content"]'),
+                        },
+                    };
+                }"""
+            )
+        except Exception as e:
+            return {"error": sanitize_error_message(e)}
+
+    async def _save_diagnostics(self, reason: str, prompt: str):
+        """Save screenshot and page summary to the Apify default key-value store."""
+        if not self.diagnostics_enabled or os.environ.get("APIFY_IS_AT_HOME") != "1":
+            return
+
+        if not self.page:
+            return
+
+        self._diagnostic_count += 1
+        key_prefix = f"DIAGNOSTIC-{self.platform_name.upper()}-{self._diagnostic_count:03d}"
+        safe_reason = reason[:500]
+        safe_prompt = prompt[:200] if prompt else ""
+
+        try:
+            summary = await self._page_diagnostic_summary()
+            await Actor.set_value(
+                f"{key_prefix}-SUMMARY",
+                json.dumps(
+                    {
+                        "platform": self.platform_name,
+                        "reason": safe_reason,
+                        "prompt": safe_prompt,
+                        "summary": summary,
+                    },
+                    indent=2,
+                ),
+                content_type="application/json",
+            )
+            self.logger.info(f"[{self.platform_name}] Saved diagnostic summary: {key_prefix}-SUMMARY")
+        except Exception:
+            pass
+
+        try:
+            screenshot = await self.page.screenshot(full_page=True)
+            await Actor.set_value(
+                f"{key_prefix}-SCREENSHOT",
+                screenshot,
+                content_type="image/png",
+            )
+            self.logger.info(f"[{self.platform_name}] Saved diagnostic screenshot: {key_prefix}-SCREENSHOT")
+        except Exception:
+            pass
 
     async def _wait_for_new_message(self, old_count: int, timeout_seconds: int = 120) -> bool:
         """Wait for the message count to increase."""
@@ -335,6 +471,7 @@ class BaseBrowserClient(ABC):
                 self.logger.warning(
                     f"[{self.platform_name}] Retrying prompt after failure: {result.error}"
                 )
+                await self._save_diagnostics(result.error or "query failed", prompt)
                 await self._handle_popups_after_refresh()
                 await asyncio.sleep(2)
 
@@ -349,7 +486,12 @@ class BaseBrowserClient(ABC):
                 await self.context.close()
             if self.browser:
                 await self.browser.close()
-            if hasattr(self, 'playwright'):
+            if self.playwright:
                 await self.playwright.stop()
         except Exception as e:
             raise
+        finally:
+            self.page = None
+            self.context = None
+            self.browser = None
+            self.playwright = None

@@ -75,11 +75,11 @@ class ChatGPTBrowserClient(BaseBrowserClient):
             pass
 
     async def _handle_popups_after_refresh(self):
-        """Handle popups that appear after a failed attempt."""
+        """Start each retry from a fresh browser context and proxy session."""
         await self._dismiss_login_popup()
 
         try:
-            await self._find_visible_textbox(timeout_ms=3000)
+            await self._restart_browser()
         except Exception:
             try:
                 await self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=60000)

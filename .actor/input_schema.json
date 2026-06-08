@@ -46,6 +46,41 @@
             "prefill": ["What are the best CRM softwares available?"],
             "minItems": 1,
             "maxItems": 3
+        },
+        "proxyConfiguration": {
+            "title": "Proxy configuration",
+            "type": "object",
+            "description": "Residential proxy is recommended for browser-only ChatGPT runs on Apify cloud.",
+            "editor": "proxy",
+            "prefill": {
+                "useApifyProxy": true,
+                "apifyProxyGroups": ["RESIDENTIAL"]
+            },
+            "default": {
+                "useApifyProxy": true,
+                "apifyProxyGroups": ["RESIDENTIAL"]
+            }
+        },
+        "proxyPlatforms": {
+            "title": "Platforms using proxy",
+            "type": "array",
+            "description": "Keep ChatGPT proxied; Gemini and Perplexity usually work without proxy.",
+            "editor": "select",
+            "items": {
+                "type": "string",
+                "enum": ["chatgpt", "gemini", "perplexity"],
+                "enumTitles": ["ChatGPT", "Gemini", "Perplexity"]
+            },
+            "prefill": ["chatgpt"],
+            "default": ["chatgpt"]
+        },
+        "diagnosticsEnabled": {
+            "title": "Save browser diagnostics",
+            "type": "boolean",
+            "description": "Stores screenshots and page summaries in the run key-value store when a browser query fails.",
+            "editor": "checkbox",
+            "prefill": true,
+            "default": true
         }
     },
     "required": ["category", "myBrand", "platforms", "prompts"]

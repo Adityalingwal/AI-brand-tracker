@@ -15,21 +15,33 @@ from .analyzer import BrandAnalyzer
 
 load_dotenv()
 
-def create_browser_client(platform: Platform, logger):
+def create_browser_client(platform: Platform, logger, proxy_configuration=None, diagnostics_enabled: bool = True):
     """Create a browser client for the given platform."""
     if platform == Platform.CHATGPT:
-        return ChatGPTBrowserClient(logger, None)
+        return ChatGPTBrowserClient(logger, proxy_configuration, diagnostics_enabled=diagnostics_enabled)
     elif platform == Platform.PERPLEXITY:
-        return PerplexityBrowserClient(logger, None)
+        return PerplexityBrowserClient(logger, None, diagnostics_enabled=diagnostics_enabled)
     elif platform == Platform.GEMINI:
-        return GeminiBrowserClient(logger, None)
+        return GeminiBrowserClient(logger, None, diagnostics_enabled=diagnostics_enabled)
     return None
 
 
-async def query_platform(platform: Platform, prompts: list[str], logger, execution_tracker: ExecutionTracker) -> list[dict]:
+async def query_platform(
+    platform: Platform,
+    prompts: list[str],
+    logger,
+    execution_tracker: ExecutionTracker,
+    proxy_configuration=None,
+    diagnostics_enabled: bool = True,
+) -> list[dict]:
     """Query a single platform with all prompts."""
     responses = []
-    client = create_browser_client(platform, logger)
+    client = create_browser_client(
+        platform,
+        logger,
+        proxy_configuration=proxy_configuration,
+        diagnostics_enabled=diagnostics_enabled,
+    )
     
     if not client:
         logger.warning(f"[{platform.value}] No client available - skipping")
@@ -132,9 +144,32 @@ async def main():
             logger.info(f"Platforms: {[p.value for p in actor_input.platforms]}")
 
             all_prompts = actor_input.prompts
+            proxy_configuration = None
+
+            if actor_input.proxy_configuration:
+                try:
+                    proxy_configuration = await Actor.create_proxy_configuration(
+                        actor_proxy_input=actor_input.proxy_configuration
+                    )
+                    if proxy_configuration:
+                        proxied_platforms = [
+                            p.value
+                            for p in actor_input.proxy_platforms
+                            if p in actor_input.platforms
+                        ]
+                        logger.info(f"Apify Proxy enabled for platforms: {proxied_platforms}")
+                except Exception as e:
+                    logger.warning(f"Apify Proxy could not be initialized: {sanitize_error_message(e)}")
             
             tasks = [
-                query_platform(platform, all_prompts, logger, execution_tracker)
+                query_platform(
+                    platform,
+                    all_prompts,
+                    logger,
+                    execution_tracker,
+                    proxy_configuration=proxy_configuration if platform in actor_input.proxy_platforms else None,
+                    diagnostics_enabled=actor_input.diagnostics_enabled,
+                )
                 for platform in actor_input.platforms
             ]
             
