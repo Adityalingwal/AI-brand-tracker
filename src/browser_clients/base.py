@@ -131,7 +131,7 @@ class BaseBrowserClient(ABC):
             return None
 
         self._proxy_session_count += 1
-        session_id = f"{self.platform_name}-{self._proxy_session_count}-{random.randint(1000, 9999)}"
+        session_id = f"{self.platform_name}_{self._proxy_session_count}_{random.randint(1000, 9999)}"
         proxy_info = await self.proxy_config.new_proxy_info(session_id=session_id)
 
         if not proxy_info or not proxy_info.url:
