@@ -41,7 +41,7 @@ class ChatGPTApiClient:
             )
 
         if not self.client:
-            self.client = AsyncOpenAI(api_key=self.api_key)
+            self.client = AsyncOpenAI(api_key=self.api_key, max_retries=0)
 
     async def query(self, prompt: str) -> BrowserQueryResult:
         """Send a prompt and return the generated response."""

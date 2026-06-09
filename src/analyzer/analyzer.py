@@ -16,7 +16,7 @@ class BrandAnalyzer:
     def __init__(self, api_key: str, logger, client: Optional[AsyncOpenAI] = None):
         self.api_key = api_key
         self.logger = logger
-        self.client = client or AsyncOpenAI(api_key=api_key)
+        self.client = client or AsyncOpenAI(api_key=api_key, max_retries=0)
         self.model = "gpt-4.1-mini"
 
     async def analyze_all_responses(

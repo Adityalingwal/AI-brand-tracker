@@ -158,7 +158,11 @@ async def main():
 
             all_prompts = actor_input.prompts
             openai_api_key = get_analysis_api_key()
-            openai_client = AsyncOpenAI(api_key=openai_api_key) if openai_api_key else None
+            openai_client = (
+                AsyncOpenAI(api_key=openai_api_key, max_retries=0)
+                if openai_api_key
+                else None
+            )
             
             tasks = [
                 query_platform(
