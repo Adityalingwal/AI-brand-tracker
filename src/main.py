@@ -10,19 +10,25 @@ from dotenv import load_dotenv
 from .config import ActorInput, Platform
 from .utils import validate_input, sanitize_error_message
 from .error_handling import ExecutionTracker
-from .browser_clients import ChatGPTBrowserClient, PerplexityBrowserClient, GeminiBrowserClient
+from .api_clients import ChatGPTApiClient
+from .browser_clients import PerplexityBrowserClient, GeminiBrowserClient
 from .analyzer import BrandAnalyzer
 
 load_dotenv()
 
-def create_browser_client(platform: Platform, logger, proxy_configuration=None, diagnostics_enabled: bool = True):
-    """Create a browser client for the given platform."""
+def create_platform_client(
+    platform: Platform,
+    logger,
+    openai_api_key: Optional[str] = None,
+    diagnostics_enabled: bool = True,
+):
+    """Create a platform client for the given platform."""
     if platform == Platform.CHATGPT:
-        return ChatGPTBrowserClient(logger, proxy_configuration, diagnostics_enabled=diagnostics_enabled)
+        return ChatGPTApiClient(logger, api_key=openai_api_key)
     elif platform == Platform.PERPLEXITY:
-        return PerplexityBrowserClient(logger, None, diagnostics_enabled=diagnostics_enabled)
+        return PerplexityBrowserClient(logger, diagnostics_enabled=diagnostics_enabled)
     elif platform == Platform.GEMINI:
-        return GeminiBrowserClient(logger, None, diagnostics_enabled=diagnostics_enabled)
+        return GeminiBrowserClient(logger, diagnostics_enabled=diagnostics_enabled)
     return None
 
 
@@ -31,15 +37,15 @@ async def query_platform(
     prompts: list[str],
     logger,
     execution_tracker: ExecutionTracker,
-    proxy_configuration=None,
+    openai_api_key: Optional[str] = None,
     diagnostics_enabled: bool = True,
 ) -> list[dict]:
     """Query a single platform with all prompts."""
     responses = []
-    client = create_browser_client(
+    client = create_platform_client(
         platform,
         logger,
-        proxy_configuration=proxy_configuration,
+        openai_api_key=openai_api_key,
         diagnostics_enabled=diagnostics_enabled,
     )
     
@@ -47,11 +53,16 @@ async def query_platform(
         logger.warning(f"[{platform.value}] No client available - skipping")
         return responses
     
-    logger.info(f"[{platform.value}] Initializing browser...")
+    uses_browser = getattr(client, "uses_browser", True)
+    if uses_browser:
+        logger.info(f"[{platform.value}] Initializing browser...")
     
     try:
         await client.initialize()
-        logger.info(f"[{platform.value}] Browser ready - querying {len(prompts)} prompt(s)")
+        if uses_browser:
+            logger.info(f"[{platform.value}] Browser ready - querying {len(prompts)} prompt(s)")
+        else:
+            logger.info(f"[{platform.value}] Querying {len(prompts)} prompt(s)")
         
         for i, prompt_text in enumerate(prompts):
             prompt_id = f"{platform.value}_{i:03d}"
@@ -100,7 +111,8 @@ async def query_platform(
         
     except Exception as e:
         _error_msg = sanitize_error_message(e)
-        logger.error(f"[{platform.value}] ✗ Browser initialization failed: {_error_msg}")
+        failure_type = "Browser initialization" if uses_browser else "Platform query initialization"
+        logger.error(f"[{platform.value}] ✗ {failure_type} failed: {_error_msg}")
         execution_tracker.add_error("platform_failed", _error_msg, context=platform.value)
     finally:
         try:
@@ -144,22 +156,7 @@ async def main():
             logger.info(f"Platforms: {[p.value for p in actor_input.platforms]}")
 
             all_prompts = actor_input.prompts
-            proxy_configuration = None
-
-            if actor_input.proxy_configuration:
-                try:
-                    proxy_configuration = await Actor.create_proxy_configuration(
-                        actor_proxy_input=actor_input.proxy_configuration
-                    )
-                    if proxy_configuration:
-                        proxied_platforms = [
-                            p.value
-                            for p in actor_input.proxy_platforms
-                            if p in actor_input.platforms
-                        ]
-                        logger.info(f"Apify Proxy enabled for platforms: {proxied_platforms}")
-                except Exception as e:
-                    logger.warning(f"Apify Proxy could not be initialized: {sanitize_error_message(e)}")
+            openai_api_key = get_analysis_api_key()
             
             tasks = [
                 query_platform(
@@ -167,7 +164,7 @@ async def main():
                     all_prompts,
                     logger,
                     execution_tracker,
-                    proxy_configuration=proxy_configuration if platform in actor_input.proxy_platforms else None,
+                    openai_api_key=openai_api_key,
                     diagnostics_enabled=actor_input.diagnostics_enabled,
                 )
                 for platform in actor_input.platforms
@@ -199,7 +196,7 @@ async def main():
                 })
                 return
 
-            analysis_key = get_analysis_api_key()
+            analysis_key = openai_api_key
 
             if not analysis_key:
                 await Actor.push_data({

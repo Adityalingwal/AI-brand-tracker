@@ -7,7 +7,6 @@ import asyncio
 import json
 import random
 import os
-from urllib.parse import urlparse
 
 from apify import Actor
 from playwright.async_api import async_playwright
@@ -22,7 +21,7 @@ from ..utils import sanitize_error_message
 
 
 class BrowserClientError(Exception):
-    """Error from browser-based client."""
+    """Error from a platform client."""
 
     def __init__(self, message: str, platform: str, recoverable: bool = True):
         self.message = message
@@ -33,7 +32,7 @@ class BrowserClientError(Exception):
 
 @dataclass
 class BrowserQueryResult:
-    """Result from querying an AI platform via browser."""
+    """Result from querying an AI platform."""
     platform: str
     prompt: str
     response: str
@@ -46,12 +45,10 @@ class BaseBrowserClient(ABC):
     def __init__(
         self,
         logger: Any,
-        proxy_config: Optional[Any] = None,
         diagnostics_enabled: bool = True,
     ):
         """Initialize browser client."""
         self.logger = logger
-        self.proxy_config = proxy_config
         self.diagnostics_enabled = diagnostics_enabled
         self.page = None
         self.browser = None
@@ -60,7 +57,6 @@ class BaseBrowserClient(ABC):
         self._message_count = 0
         self._headless = False
         self._diagnostic_count = 0
-        self._proxy_session_count = 0
 
     @property
     @abstractmethod
@@ -125,32 +121,6 @@ class BaseBrowserClient(ABC):
         """Submit the typed prompt. Platforms can override for button-only UIs."""
         await self.page.keyboard.press("Enter")
 
-    async def _build_playwright_proxy(self) -> Optional[dict[str, str]]:
-        """Create a Playwright proxy config from Apify ProxyConfiguration."""
-        if not self.proxy_config:
-            return None
-
-        self._proxy_session_count += 1
-        session_id = f"{self.platform_name}_{self._proxy_session_count}_{random.randint(1000, 9999)}"
-        proxy_info = await self.proxy_config.new_proxy_info(session_id=session_id)
-
-        if not proxy_info or not proxy_info.url:
-            return None
-
-        parsed = urlparse(proxy_info.url)
-        server = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
-        proxy = {"server": server}
-
-        username = parsed.username or getattr(proxy_info, "username", None)
-        password = parsed.password or getattr(proxy_info, "password", None)
-
-        if username:
-            proxy["username"] = username
-        if password:
-            proxy["password"] = password
-
-        return proxy
-
     async def _execute_with_retry(self, operation: callable, error_message: str, max_retries: int = 1):
         for attempt in range(max_retries + 1):
             try:
@@ -193,11 +163,6 @@ class BaseBrowserClient(ABC):
                 "headless": headless,
                 "args": browser_args,
             }
-            playwright_proxy = await self._build_playwright_proxy()
-
-            if playwright_proxy:
-                launch_options["proxy"] = playwright_proxy
-                self.logger.info(f"[{self.platform_name}] Browser proxy enabled")
 
             self.browser = await self.playwright.chromium.launch(
                 **launch_options
@@ -245,7 +210,7 @@ class BaseBrowserClient(ABC):
         pass
 
     async def _restart_browser(self):
-        """Restart browser context, rotating proxy session when proxy is configured."""
+        """Restart browser context."""
         await self.close()
         await self.initialize(headless=self._headless)
 
@@ -275,11 +240,6 @@ class BaseBrowserClient(ABC):
                         visibleCounts: {
                             textboxes: countVisible('textarea, [contenteditable="true"], [role="textbox"]'),
                             buttons: countVisible('button'),
-                            chatgptComposer: countVisible('#prompt-textarea'),
-                            chatgptSendButtons: countVisible(
-                                'button[data-testid="send-button"], button[aria-label="Send prompt"], button[aria-label="Send message"]'
-                            ),
-                            chatgptAssistantMessages: countVisible('[data-message-author-role="assistant"]'),
                             perplexityComposer: countVisible('#ask-input'),
                             perplexityMarkdown: countVisible('[id^="markdown-content"]'),
                         },

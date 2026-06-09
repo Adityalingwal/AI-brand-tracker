@@ -6,7 +6,7 @@ Track how AI platforms like ChatGPT, Gemini, and Perplexity recommend your brand
 
 As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and other AI platforms perceive your brand is critical. This Actor provides:
 
-- **AI Visibility Monitoring** — See exactly how often AI platforms mention and recommend your brand
+- **AI Visibility Monitoring** — See how often AI platforms mention and recommend your brand
 - **Competitive Intelligence** — Discover which competitors dominate AI recommendations in your space
 - **Cross-Platform Insights** — Compare how different AI platforms (ChatGPT vs Gemini vs Perplexity) perceive your brand
 - **Actionable Gap Analysis** — Identify specific queries where your brand is missing from AI recommendations
@@ -202,7 +202,7 @@ This compute cost is charged by Apify from your account.
 
 **Q: How does it query AI platforms?**
 
-The Actor uses browser automation to interact with AI platforms exactly like a human user would.
+The Actor uses platform-specific query flows optimized for reliable brand visibility checks.
 
 **Q: Which AI platforms are supported?**
 
