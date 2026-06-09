@@ -1,6 +1,6 @@
 # AI Brand Visibility
 
-Track how AI platforms like ChatGPT, Gemini, and Perplexity recommend your brand versus competitors. Get instant visibility into which brands dominate AI-generated recommendations in your industry — perfect for marketing teams, SEO specialists, and brand managers optimizing for the AI search era.
+Track how AI platforms like ChatGPT and Gemini recommend your brand versus competitors. Get instant visibility into which brands dominate AI-generated recommendations in your industry — perfect for marketing teams, SEO specialists, and brand managers optimizing for the AI search era.
 
 ## 🚀 Why Use AI Brand Visibility?
 
@@ -8,7 +8,7 @@ As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and 
 
 - **AI Visibility Monitoring** — See how often AI platforms mention and recommend your brand
 - **Competitive Intelligence** — Discover which competitors dominate AI recommendations in your space
-- **Cross-Platform Insights** — Compare how different AI platforms (ChatGPT vs Gemini vs Perplexity) perceive your brand
+- **Cross-Platform Insights** — Compare how different AI platforms (ChatGPT vs Gemini) perceive your brand
 - **Actionable Gap Analysis** — Identify specific queries where your brand is missing from AI recommendations
 - **Plain English Summaries** — No complex metrics, just clear insights you can act on
 
@@ -23,7 +23,7 @@ As AI-powered search becomes mainstream, understanding how ChatGPT, Gemini, and 
 1. Enter **industry category** (e.g., "CRM software")
 2. Enter your **brand name** (e.g., "hubspot")
 3. Add **competitor brands** you want to compare against.
-4. Select which **AI platforms** to query (ChatGPT, Gemini, Perplexity)
+4. Select which **AI platforms** to query (ChatGPT, Gemini)
 5. Add your own **custom prompts**
 6. Click **Run** and receive a comprehensive visibility report
 
@@ -49,7 +49,7 @@ For each brand tracked, you receive:
   "category": "CRM software",
   "myBrand": "Salesforce",
   "competitors": ["HubSpot", "Pipedrive"],
-  "platforms": ["chatgpt", "gemini", "perplexity"],
+  "platforms": ["chatgpt", "gemini"],
   "prompts": [
     "What are the best CRM tools for small businesses?",
     "Compare enterprise CRM solutions",
@@ -82,10 +82,6 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
       "gemini": {
         "summary": "Excellent performance with 7 mentions across all 3 prompts, achieving the #1 ranking. Gemini consistently highlights Salesforce as the comprehensive enterprise platform with advanced AI capabilities.",
         "promptsMentionSummary": "Complete coverage across all query types. Particularly strong positioning around customization depth and Einstein AI forecasting features."
-      },
-      "perplexity": {
-        "summary": "Solid visibility with 5 mentions across 2 of 3 prompts, ranking #2. Perplexity presents Salesforce as the enterprise-grade choice for organizations with complex operational requirements.",
-        "promptsMentionSummary": "Well-represented in enterprise and automation discussions. Gap identified: Not mentioned in small business recommendation queries."
       }
     }
   },
@@ -100,10 +96,6 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
         "gemini": {
           "summary": "Strong showing with 5 mentions, ranking #2. Gemini emphasizes HubSpot's accessibility and excellent ease-of-use for growing teams.",
           "promptsMentionSummary": "Consistent mentions across query types with focus on user-friendliness."
-        },
-        "perplexity": {
-          "summary": "Top performer with 6 mentions, ranking #1. Perplexity positions HubSpot as the go-to recommendation for teams seeking the best balance of features and accessibility.",
-          "promptsMentionSummary": "Featured prominently in all recommendation queries."
         }
       }
     },
@@ -116,10 +108,6 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
         "gemini": {
           "summary": "Gemini highlights Pipedrive's visual pipeline management and competitive pricing structure.",
           "promptsMentionSummary": "Mentioned for visual workflows and value proposition."
-        },
-        "perplexity": {
-          "summary": "Perplexity presents Pipedrive as a cost-effective, sales-centric option for smaller organizations.",
-          "promptsMentionSummary": "Featured in price-comparison and sales tool discussions."
         }
       }
     }
@@ -129,8 +117,8 @@ Results are stored in the Apify Dataset. You can download them as JSON, CSV, or 
     "startedAt": "2025-01-11T12:00:00Z",
     "completedAt": "2025-01-11T12:02:30Z",
     "durationMs": 150000,
-    "totalResponses": 9,
-    "platformsQueried": ["chatgpt", "gemini", "perplexity"]
+    "totalResponses": 6,
+    "platformsQueried": ["chatgpt", "gemini"]
   }
 }
 ```
@@ -173,7 +161,7 @@ This Actor uses Pay-Per-Event pricing. You pay a flat fee per complete analysis.
 | ---------------- | ----- | -------------------------------------------------- |
 | `brand-analysis` | $0.30 | Complete analysis across all platforms and prompts |
 
-**💡 Example:** Analyzing your brand across 3 AI platforms with 3 prompts costs $0.30 total.
+**💡 Example:** Analyzing your brand across 2 AI platforms with 3 prompts costs $0.30 total.
 
 ### Tier Discounts
 
@@ -206,7 +194,7 @@ The Actor uses platform-specific query flows optimized for reliable brand visibi
 
 **Q: Which AI platforms are supported?**
 
-Currently: ChatGPT, Gemini, and Perplexity.
+Currently: ChatGPT and Gemini.
 
 **Q: How accurate is the brand detection?**
 
@@ -230,7 +218,7 @@ An AI analyzes each response to detect brand mentions, context, and positioning.
 
 **Initial Release** 🚀
 
-- Multi-platform brand visibility tracking (ChatGPT, Gemini, Perplexity)
+- Multi-platform brand visibility tracking (ChatGPT, Gemini)
 - AI-powered brand mention detection with context analysis
 - Competitive benchmarking across AI platforms
 - Plain English summaries for actionable insights

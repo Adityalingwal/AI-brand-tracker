@@ -56,7 +56,7 @@ class BaseBrowserClient(ABC):
     @property
     @abstractmethod
     def platform_name(self) -> str:
-        """Name of the platform (e.g., 'chatgpt', 'gemini', 'perplexity')."""
+        """Name of the platform (e.g., 'chatgpt', 'gemini')."""
         pass
 
     @property

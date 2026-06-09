@@ -12,7 +12,7 @@ from .config import ActorInput, Platform
 from .utils import validate_input, sanitize_error_message
 from .error_handling import ExecutionTracker
 from .api_clients import ChatGPTApiClient
-from .browser_clients import PerplexityBrowserClient, GeminiBrowserClient
+from .browser_clients import GeminiBrowserClient
 from .analyzer import BrandAnalyzer
 
 load_dotenv()
@@ -26,8 +26,6 @@ def create_platform_client(
     """Create a platform client for the given platform."""
     if platform == Platform.CHATGPT:
         return ChatGPTApiClient(logger, api_key=openai_api_key, client=openai_client)
-    elif platform == Platform.PERPLEXITY:
-        return PerplexityBrowserClient(logger)
     elif platform == Platform.GEMINI:
         return GeminiBrowserClient(logger)
     return None

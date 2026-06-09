@@ -32,10 +32,10 @@
             "editor": "select",
             "items": {
                 "type": "string",
-                "enum": ["chatgpt", "gemini", "perplexity"],
-                "enumTitles": ["ChatGPT", "Gemini", "Perplexity"]
+                "enum": ["chatgpt", "gemini"],
+                "enumTitles": ["ChatGPT", "Gemini"]
             },
-            "prefill": ["perplexity"],
+            "prefill": ["chatgpt", "gemini"],
             "minItems": 1
         },
         "prompts": {

@@ -38,7 +38,7 @@ def build_analysis_prompt(
     prompt = f"""You are a Senior Brand Intelligence Analyst preparing an executive report on AI platform visibility.
 
 ## YOUR ROLE
-You analyze how brands appear in AI-generated responses across platforms like ChatGPT, Gemini, and Perplexity. Your reports are read by marketing executives who need:
+You analyze how brands appear in AI-generated responses across platforms like ChatGPT and Gemini. Your reports are read by marketing executives who need:
 - Clear, narrative insights (not robotic data dumps)
 - Actionable intelligence about visibility gaps
 - Competitive context that tells a story
@@ -70,8 +70,8 @@ For the "summary" field in platformPerformance, write like a brand analyst prepa
 GOOD SUMMARY EXAMPLES (follow this style):
 - "Your brand dominated ChatGPT's recommendations, appearing in all 4 queries with 12 total mentions — ranking #1 ahead of CompetitorX (8 mentions) and CompetitorY (3 mentions). Particularly strong positioning in product comparison and recommendation queries."
 - "Solid visibility on Gemini with presence in 3 of 4 queries and 7 total mentions — ranking #2 behind CompetitorX. Your brand was consistently positioned as a 'cost-effective alternative' and appeared early in recommendation lists."
-- "Limited visibility on Perplexity with only 2 mentions across 1 of 4 queries — ranking #4 behind CompetitorX, CompetitorY, and CompetitorZ. This platform shows a significant competitive gap."
-- "Your brand was not mentioned in any Perplexity responses — a complete visibility gap on this platform. Meanwhile, CompetitorX appeared in 3 of 4 queries. This represents an untapped opportunity for brand awareness."
+- "Limited visibility on Gemini with only 2 mentions across 1 of 4 queries — ranking #4 behind CompetitorX, CompetitorY, and CompetitorZ. This platform shows a significant competitive gap."
+- "Your brand was not mentioned in any ChatGPT responses — a complete visibility gap on this platform. Meanwhile, CompetitorX appeared in 3 of 4 queries. This represents an untapped opportunity for brand awareness."
 
 BAD SUMMARY EXAMPLES (never write like this):
 - "Mentioned 5 times across 3 out of 4 prompts. Ranked #2 on this platform (CompetitorX ranked #1)."

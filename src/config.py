@@ -7,7 +7,6 @@ class Platform(Enum):
     """Supported AI platforms."""
     CHATGPT = "chatgpt"
     GEMINI = "gemini"
-    PERPLEXITY = "perplexity"
 
 @dataclass
 class ActorInput:
