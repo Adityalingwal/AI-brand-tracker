@@ -13,10 +13,10 @@ from .prompts import build_analysis_prompt
 class BrandAnalyzer:
     """Analyzes AI platform responses to track brand visibility and mentions."""
 
-    def __init__(self, api_key: str, logger):
+    def __init__(self, api_key: str, logger, client: Optional[AsyncOpenAI] = None):
         self.api_key = api_key
         self.logger = logger
-        self.client = AsyncOpenAI(api_key=api_key)
+        self.client = client or AsyncOpenAI(api_key=api_key)
         self.model = "gpt-4.1-mini"
 
     async def analyze_all_responses(

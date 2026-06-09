@@ -20,11 +20,12 @@ class ChatGPTApiClient:
         logger: Any,
         api_key: Optional[str] = None,
         model: Optional[str] = None,
+        client: Optional[AsyncOpenAI] = None,
     ):
         self.logger = logger
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.model = model or os.environ.get("OPENAI_CHATGPT_MODEL", "gpt-4.1-nano")
-        self.client: Optional[AsyncOpenAI] = None
+        self.client = client
 
     @property
     def platform_name(self) -> str:
@@ -39,7 +40,8 @@ class ChatGPTApiClient:
                 recoverable=False,
             )
 
-        self.client = AsyncOpenAI(api_key=self.api_key)
+        if not self.client:
+            self.client = AsyncOpenAI(api_key=self.api_key)
 
     async def query(self, prompt: str) -> BrowserQueryResult:
         """Send a prompt and return the generated response."""

@@ -46,14 +46,6 @@
             "prefill": ["What are the best CRM softwares available?"],
             "minItems": 1,
             "maxItems": 3
-        },
-        "diagnosticsEnabled": {
-            "title": "Save browser diagnostics",
-            "type": "boolean",
-            "description": "Stores screenshots and page summaries in the run key-value store when a browser query fails.",
-            "editor": "checkbox",
-            "prefill": true,
-            "default": true
         }
     },
     "required": ["category", "myBrand", "platforms", "prompts"]

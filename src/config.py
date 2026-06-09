@@ -17,7 +17,6 @@ class ActorInput:
     competitors: list[str] = field(default_factory=list)
     platforms: list[Platform] = field(default_factory=list)
     prompts: list[str] = field(default_factory=list)
-    diagnostics_enabled: bool = True
 
     @property
     def all_brands(self) -> list[str]:
@@ -40,5 +39,4 @@ class ActorInput:
             competitors=[c.strip() for c in raw.get("competitors", []) if c.strip()][:5],
             platforms=platforms,
             prompts=[p.strip() for p in raw.get("prompts", []) if p.strip()][:3],
-            diagnostics_enabled=raw.get("diagnosticsEnabled", True),
         )

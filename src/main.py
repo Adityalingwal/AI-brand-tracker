@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from apify import Actor
 from dotenv import load_dotenv
+from openai import AsyncOpenAI
 from .config import ActorInput, Platform
 from .utils import validate_input, sanitize_error_message
 from .error_handling import ExecutionTracker
@@ -20,15 +21,15 @@ def create_platform_client(
     platform: Platform,
     logger,
     openai_api_key: Optional[str] = None,
-    diagnostics_enabled: bool = True,
+    openai_client: Optional[AsyncOpenAI] = None,
 ):
     """Create a platform client for the given platform."""
     if platform == Platform.CHATGPT:
-        return ChatGPTApiClient(logger, api_key=openai_api_key)
+        return ChatGPTApiClient(logger, api_key=openai_api_key, client=openai_client)
     elif platform == Platform.PERPLEXITY:
-        return PerplexityBrowserClient(logger, diagnostics_enabled=diagnostics_enabled)
+        return PerplexityBrowserClient(logger)
     elif platform == Platform.GEMINI:
-        return GeminiBrowserClient(logger, diagnostics_enabled=diagnostics_enabled)
+        return GeminiBrowserClient(logger)
     return None
 
 
@@ -38,7 +39,7 @@ async def query_platform(
     logger,
     execution_tracker: ExecutionTracker,
     openai_api_key: Optional[str] = None,
-    diagnostics_enabled: bool = True,
+    openai_client: Optional[AsyncOpenAI] = None,
 ) -> list[dict]:
     """Query a single platform with all prompts."""
     responses = []
@@ -46,7 +47,7 @@ async def query_platform(
         platform,
         logger,
         openai_api_key=openai_api_key,
-        diagnostics_enabled=diagnostics_enabled,
+        openai_client=openai_client,
     )
     
     if not client:
@@ -157,6 +158,7 @@ async def main():
 
             all_prompts = actor_input.prompts
             openai_api_key = get_analysis_api_key()
+            openai_client = AsyncOpenAI(api_key=openai_api_key) if openai_api_key else None
             
             tasks = [
                 query_platform(
@@ -165,7 +167,7 @@ async def main():
                     logger,
                     execution_tracker,
                     openai_api_key=openai_api_key,
-                    diagnostics_enabled=actor_input.diagnostics_enabled,
+                    openai_client=openai_client,
                 )
                 for platform in actor_input.platforms
             ]
@@ -205,7 +207,7 @@ async def main():
                 })
                 return
 
-            analyzer = BrandAnalyzer(analysis_key, logger)
+            analyzer = BrandAnalyzer(analysis_key, logger, client=openai_client)
 
             platform_responses = [
                 {
