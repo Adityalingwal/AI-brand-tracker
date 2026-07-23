@@ -1,7 +1,6 @@
 """AI Brand Visibility - Track brand visibility across AI platforms."""
 
 import asyncio
-import os
 import traceback
 from datetime import datetime, timezone
 from typing import Optional
@@ -11,7 +10,11 @@ from openai import AsyncOpenAI
 from .config import ActorInput, Platform
 from .utils import validate_input, sanitize_error_message
 from .error_handling import ExecutionTracker
-from .api_clients import ChatGPTApiClient
+from .api_clients import (
+    ChatGPTApiClient,
+    create_openrouter_client,
+    get_openrouter_api_key,
+)
 from .browser_clients import GeminiBrowserClient
 from .analyzer import BrandAnalyzer
 
@@ -20,12 +23,16 @@ load_dotenv()
 def create_platform_client(
     platform: Platform,
     logger,
-    openai_api_key: Optional[str] = None,
-    openai_client: Optional[AsyncOpenAI] = None,
+    openrouter_api_key: Optional[str] = None,
+    openrouter_client: Optional[AsyncOpenAI] = None,
 ):
     """Create a platform client for the given platform."""
     if platform == Platform.CHATGPT:
-        return ChatGPTApiClient(logger, api_key=openai_api_key, client=openai_client)
+        return ChatGPTApiClient(
+            logger,
+            api_key=openrouter_api_key,
+            client=openrouter_client,
+        )
     elif platform == Platform.GEMINI:
         return GeminiBrowserClient(logger)
     return None
@@ -36,16 +43,16 @@ async def query_platform(
     prompts: list[str],
     logger,
     execution_tracker: ExecutionTracker,
-    openai_api_key: Optional[str] = None,
-    openai_client: Optional[AsyncOpenAI] = None,
+    openrouter_api_key: Optional[str] = None,
+    openrouter_client: Optional[AsyncOpenAI] = None,
 ) -> list[dict]:
     """Query a single platform with all prompts."""
     responses = []
     client = create_platform_client(
         platform,
         logger,
-        openai_api_key=openai_api_key,
-        openai_client=openai_client,
+        openrouter_api_key=openrouter_api_key,
+        openrouter_client=openrouter_client,
     )
     
     if not client:
@@ -121,12 +128,6 @@ async def query_platform(
     
     return responses
 
-
-def get_analysis_api_key() -> Optional[str]:
-    """Get OpenAI API key from environment."""
-    return os.environ.get("OPENAI_API_KEY")
-
-
 async def main():
     """Main entry point."""
 
@@ -134,6 +135,7 @@ async def main():
         logger = Actor.log
         execution_tracker = ExecutionTracker()
         started_at = datetime.now(timezone.utc)
+        openrouter_client: Optional[AsyncOpenAI] = None
 
         logger.info("AI Brand Visibility - Starting")
 
@@ -155,12 +157,15 @@ async def main():
             logger.info(f"Platforms: {[p.value for p in actor_input.platforms]}")
 
             all_prompts = actor_input.prompts
-            openai_api_key = get_analysis_api_key()
-            openai_client = (
-                AsyncOpenAI(api_key=openai_api_key, max_retries=0)
-                if openai_api_key
-                else None
-            )
+            openrouter_api_key = get_openrouter_api_key()
+            openrouter_client = create_openrouter_client(openrouter_api_key)
+
+            if not openrouter_api_key or not openrouter_client:
+                await Actor.push_data({
+                    "type": "error",
+                    "message": "OPENROUTER_API_KEY environment variable not set",
+                })
+                return
             
             tasks = [
                 query_platform(
@@ -168,8 +173,8 @@ async def main():
                     all_prompts,
                     logger,
                     execution_tracker,
-                    openai_api_key=openai_api_key,
-                    openai_client=openai_client,
+                    openrouter_api_key=openrouter_api_key,
+                    openrouter_client=openrouter_client,
                 )
                 for platform in actor_input.platforms
             ]
@@ -200,16 +205,11 @@ async def main():
                 })
                 return
 
-            analysis_key = openai_api_key
-
-            if not analysis_key:
-                await Actor.push_data({
-                    "type": "error",
-                    "message": "OPENAI_API_KEY environment variable not set",
-                })
-                return
-
-            analyzer = BrandAnalyzer(analysis_key, logger, client=openai_client)
+            analyzer = BrandAnalyzer(
+                openrouter_api_key,
+                logger,
+                client=openrouter_client,
+            )
 
             platform_responses = [
                 {
@@ -263,15 +263,23 @@ async def main():
             logger.info("=" * 40)
             
         except Exception as e:
-            error_msg = str(e)
-            if "OPENAI_API_KEY" in error_msg or "api_key" in error_msg.lower():
-                error_msg = "API configuration error"
+            error_msg = sanitize_error_message(e)
             logger.error(f"Error: {error_msg}")
             tb = traceback.format_exc()
-            if "OPENAI_API_KEY" in tb or "api_key" in tb.lower():
+            if (
+                "OPENROUTER_API_KEY" in tb
+                or "api_key" in tb.lower()
+                or "sk-or-" in tb.lower()
+            ):
                 logger.error("Error details hidden for security")
             else:
                 traceback.print_exc()
+        finally:
+            if openrouter_client:
+                try:
+                    await openrouter_client.close()
+                except Exception:
+                    pass
 
 
 if __name__ == "__main__":

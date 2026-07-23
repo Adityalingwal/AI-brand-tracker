@@ -35,7 +35,7 @@ class ActorInput:
         return cls(
             category=raw.get("category", "").strip(),
             my_brand=raw.get("myBrand", "").strip(),
-            competitors=[c.strip() for c in raw.get("competitors", []) if c.strip()][:5],
+            competitors=[c.strip() for c in raw.get("competitors", []) if c.strip()],
             platforms=platforms,
-            prompts=[p.strip() for p in raw.get("prompts", []) if p.strip()][:3],
+            prompts=[p.strip() for p in raw.get("prompts", []) if p.strip()],
         )

@@ -1,4 +1,4 @@
-"""ChatGPT platform client backed by the configured OpenAI API key."""
+"""ChatGPT-labelled platform client backed by an OpenAI model on OpenRouter."""
 
 import asyncio
 import os
@@ -8,10 +8,11 @@ from openai import AsyncOpenAI
 
 from ..browser_clients.base import BrowserClientError, BrowserQueryResult
 from ..utils import sanitize_error_message
+from .openrouter_client import create_openrouter_client
 
 
 class ChatGPTApiClient:
-    """Low-latency ChatGPT query client with the same public interface as browser clients."""
+    """Query an OpenAI model through OpenRouter using the browser-client interface."""
 
     uses_browser = False
 
@@ -19,12 +20,11 @@ class ChatGPTApiClient:
         self,
         logger: Any,
         api_key: Optional[str] = None,
-        model: Optional[str] = None,
         client: Optional[AsyncOpenAI] = None,
     ):
         self.logger = logger
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self.model = model or os.environ.get("OPENAI_CHATGPT_MODEL", "gpt-4.1-nano")
+        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
+        self.model = "openai/gpt-4.1-nano"
         self.client = client
 
     @property
@@ -41,7 +41,14 @@ class ChatGPTApiClient:
             )
 
         if not self.client:
-            self.client = AsyncOpenAI(api_key=self.api_key, max_retries=0)
+            self.client = create_openrouter_client(self.api_key)
+
+        if not self.client:
+            raise BrowserClientError(
+                message="Internal OpenRouter client is not configured",
+                platform=self.platform_name,
+                recoverable=False,
+            )
 
     async def query(self, prompt: str) -> BrowserQueryResult:
         """Send a prompt and return the generated response."""

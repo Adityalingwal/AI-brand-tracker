@@ -131,17 +131,6 @@ Return this exact JSON structure:
         }}
       }}
     }}
-  }},
-
-  "competitorBrandPerformance": {{
-    "<competitor>": {{
-      "platformPerformance": {{
-        "<platform>": {{
-          "summary": "<same professional narrative format>",
-          "promptsMentionSummary": "<same actionable format with gaps>"
-        }}
-      }}
-    }}
   }}
 }}
 
